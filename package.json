@@ -1,0 +1,21 @@
+{
+  "name": "purrfect-gift",
+  "version": "1.0.0",
+  "private": true,
+  "description": "A blue, cat-themed interactive digital gift with a photo carousel and a pinboard of notes, backed by MongoDB Atlas.",
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "dotenv": "^17.4.2",
+    "mongodb": "^6.21.0"
+  },
+  "main": "script.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs"
+}

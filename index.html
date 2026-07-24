@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>A Little Gift, Whiskers & All</title>
+  <meta name="description" content="A cat-themed digital gift for couples with a responsive photo carousel and a pinboard of notes." />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@400;600;700;800&family=Caveat:wght@500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- ===================== ENVELOPE INTRO ===================== -->
+  <div id="envelope-overlay" role="button" tabindex="0" aria-label="Skip opening animation">
+    <div class="night-sky">
+      <span class="star s1"></span><span class="star s2"></span><span class="star s3"></span>
+      <span class="star s4"></span><span class="star s5"></span><span class="star s6"></span>
+      <span class="star s7"></span><span class="star s8"></span>
+      <div class="moon"></div>
+    </div>
+
+    <div class="envelope-scene">
+      <div class="letter">
+        <div class="letter-face">
+          <p class="letter-kicker">a small delivery for</p>
+          <p class="letter-title">My Favorite Person</p>
+          <div class="letter-paw">🐾❤️🐾</div>
+        </div>
+      </div>
+
+      <div class="envelope">
+        <div class="envelope-back"></div>
+        <div class="envelope-flap">
+          <div class="wax-seal">🐾</div>
+        </div>
+        <div class="envelope-front-left"></div>
+        <div class="envelope-front-right"></div>
+      </div>
+    </div>
+
+    <p class="tap-hint">tap anywhere to open</p>
+  </div>
+
+  <!-- ===================== MAIN SITE ===================== -->
+  <main id="site" aria-hidden="true">
+
+    <header class="hero">
+      <div class="hero-ears" aria-hidden="true">
+        <span class="ear ear-left"></span>
+        <span class="ear ear-right"></span>
+      </div>
+      <p class="hero-eyebrow">handle with care · 100% purr-fect together 🐾</p>
+      <h1 class="hero-title">For You, With Whiskers & Love</h1>
+      <p class="hero-sub">A cute little corner of the web made specially for us.</p>
+      <a href="#pinboard" class="hero-scroll">
+        <span>leave a note</span>
+        <svg width="14" height="20" viewBox="0 0 14 20" fill="none"><path d="M7 1v17M1 12l6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+    </header>
+
+    <!-- ===================== CAROUSEL SECTION ===================== -->
+    <section class="carousel-section" aria-label="Photo carousel">
+      <p class="section-eyebrow">our journey together 🐾</p>
+      <h2 class="section-title">Purr-fect Moments Together</h2>
+
+      <div class="carousel" id="carousel">
+        <div class="clothesline" aria-hidden="true"></div>
+
+        <div class="carousel-track" id="carousel-track">
+
+          <!-- SLIDE 1 -->
+          <figure class="slide">
+            <span class="peg" aria-hidden="true">📌</span>
+            <div class="polaroid">
+              <div class="polaroid-img-wrap">
+                <img src="assets/photo1.png" alt="Our first date" class="polaroid-img" />
+                <span class="paw-badge top-left">🐾</span>
+              </div>
+              <figcaption>Our first date! 🐱❤️</figcaption>
+            </div>
+          </figure>
+
+          <!-- SLIDE 2 -->
+          <figure class="slide">
+            <span class="peg" aria-hidden="true">📌</span>
+            <div class="polaroid">
+              <div class="polaroid-img-wrap">
+                <img src="assets/photo2.png" alt="Cuddle time" class="polaroid-img" />
+                <span class="paw-badge bottom-right">🐾</span>
+              </div>
+              <figcaption>Cuddle time 💤</figcaption>
+            </div>
+          </figure>
+
+          <!-- SLIDE 3 -->
+          <figure class="slide">
+            <span class="peg" aria-hidden="true">📌</span>
+            <div class="polaroid">
+              <div class="polaroid-img-wrap">
+                <img src="assets/photo3.png" alt="Adventures together" class="polaroid-img" />
+                <span class="paw-badge top-right">🐾</span>
+              </div>
+              <figcaption>Adventures with you 🐾</figcaption>
+            </div>
+          </figure>
+
+          <!-- SLIDE 4 -->
+          <figure class="slide">
+            <span class="peg" aria-hidden="true">📌</span>
+            <div class="polaroid">
+              <div class="polaroid-img-wrap">
+                <img src="assets/photo4.png" alt="Forever and ever" class="polaroid-img" />
+                <span class="paw-badge bottom-left">🐾</span>
+              </div>
+              <figcaption>Forever my favorite person 💖</figcaption>
+            </div>
+          </figure>
+
+        </div>
+
+        <button class="carousel-btn prev" id="prev-btn" aria-label="Previous photo">&#10094;</button>
+        <button class="carousel-btn next" id="next-btn" aria-label="Next photo">&#10095;</button>
+
+        <div class="carousel-dots" id="carousel-dots"></div>
+      </div>
+    </section>
+
+    <!-- ===================== PINBOARD SECTION ===================== -->
+    <section class="pinboard-section" id="pinboard" aria-label="Leave a note">
+      <p class="section-eyebrow">our love board 🐾</p>
+      <h2 class="section-title">Leave a Little Note</h2>
+      <p class="section-sub">Pin a sweet message or cat quote — it'll stay here for us to see!</p>
+
+      <form id="note-form" class="note-form">
+        <label class="visually-hidden" for="note-name">Your name</label>
+        <input id="note-name" name="name" type="text" placeholder="Your name (or nickname)" maxlength="60" />
+
+        <label class="visually-hidden" for="note-message">Your message</label>
+        <textarea id="note-message" name="message" placeholder="Write something sweet..." maxlength="500" rows="3" required></textarea>
+
+        <button type="submit" id="note-submit">
+          <span class="btn-label">Pin it</span>
+          <span class="btn-paw">🐾</span>
+        </button>
+        <p class="form-status" id="form-status" role="status"></p>
+      </form>
+
+      <div class="corkboard" id="corkboard" aria-live="polite">
+        <p class="corkboard-empty" id="corkboard-empty">Loading notes…</p>
+      </div>
+    </section>
+
+    <footer class="site-footer">
+      <p> <3 </p>
+    </footer>
+
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>
