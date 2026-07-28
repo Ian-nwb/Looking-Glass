@@ -7,15 +7,6 @@ A blue, cat-themed digital gift:
 
 Plain HTML/CSS/JS on the front end, one small Node serverless function for the API, ready to deploy on Vercel.
 
-## ⚠️ About the database password — please rotate it
-
-You shared your MongoDB Atlas username and password directly in our chat. Please treat that password as
-**already compromised** and rotate it before (or right after) you go live:
-
-1. In MongoDB Atlas → **Database Access**, edit the user `kennethsianghio756_db_user` and set a **new** password.
-2. Use that new password only inside environment variables (see below) — never paste it into a file that gets committed to GitHub.
-
-The code in this project never hardcodes the password; it always reads it from an environment variable called `MONGODB_URI`.
 
 ## 1. Project structure
 
