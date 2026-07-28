@@ -31,19 +31,24 @@
       vy: (Math.random() - 0.5) * 0.4,
     }));
 
-    // Mouse cursor trail
+    // Mouse / touch cursor trail
     const trail = [];
-    window.addEventListener('mousemove', (e) => {
+    function addTrailPoint(x, y) {
       if (Math.random() < 0.3) {
         trail.push({
-          x: e.clientX,
-          y: e.clientY,
+          x,
+          y,
           size: Math.random() * 12 + 8,
           alpha: 0.7,
           rotation: Math.random() * Math.PI * 2,
         });
       }
-    });
+    }
+    window.addEventListener('mousemove', (e) => addTrailPoint(e.clientX, e.clientY));
+    window.addEventListener('touchmove', (e) => {
+      const t = e.touches[0];
+      if (t) addTrailPoint(t.clientX, t.clientY);
+    }, { passive: true });
 
     // Draw paw print in soft baby blue / deep slate blue tones (NO ORANGE)
     function drawPaw(x, y, size, alpha, rotation) {

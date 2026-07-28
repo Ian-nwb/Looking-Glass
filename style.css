@@ -212,10 +212,10 @@ body {
 
 .hero {
   position: relative;
-  min-height: 70vh;
+  min-height: 60vh;
   display: flex; flex-direction: column; align-items: center; justify-content: center;
   text-align: center;
-  padding: 80px 24px 40px;
+  padding: clamp(56px, 14vw, 80px) clamp(16px, 5vw, 24px) clamp(28px, 6vw, 40px);
   /* Pastel dreamy gradient: Soft cloud blue -> Sweet baby blue */
   background: linear-gradient(180deg, #6B9BD2 0%, #8EB6E6 50%, #B8D5F5 100%);
   color: #FFFFFF;
@@ -230,10 +230,11 @@ body {
 }
 
 .ear {
-  width: 90px; height: 90px;
+  width: clamp(46px, 12vw, 90px);
+  height: clamp(46px, 12vw, 90px);
   background: var(--midnight);
   border-radius: 50%;
-  transform: translateY(-60px);
+  transform: translateY(-40%);
   opacity: 0.95;
 }
 
@@ -303,7 +304,7 @@ body {
 
 /* ---------- RESPONSIVE CAROUSEL & POLAROID ---------- */
 .carousel-section {
-  padding: 70px 20px 90px;
+  padding: clamp(44px, 9vw, 70px) clamp(12px, 4vw, 20px) clamp(56px, 10vw, 90px);
 }
 
 .carousel {
@@ -311,6 +312,12 @@ body {
   max-width: 780px;
   margin: 0 auto;
   padding-top: 30px;
+}
+
+@media (max-width: 480px) {
+  .slide { padding: 0 6px; }
+  .polaroid { padding: 12px 12px 18px; max-width: 320px; }
+  .polaroid figcaption { font-size: 1.25rem; margin-top: 10px; }
 }
 
 .clothesline {
@@ -428,6 +435,10 @@ body {
   .carousel-btn.next { right: 2px; }
 }
 
+@media (max-width: 420px) {
+  .carousel-btn { width: 36px; height: 36px; font-size: 0.85rem; }
+}
+
 .carousel-dots {
   display: flex; justify-content: center; gap: 8px;
   margin-top: 24px;
@@ -448,7 +459,7 @@ body {
 
 /* ---------- PINBOARD / NOTES ---------- */
 .pinboard-section {
-  padding: 80px 20px 100px;
+  padding: clamp(48px, 9vw, 80px) clamp(14px, 4vw, 20px) clamp(56px, 10vw, 100px);
   /* Soft warm cream letter background with subtle glowing highlights */
   background:
     radial-gradient(circle at 15% 20%, rgba(255, 255, 255, 0.6) 0, transparent 40%),
@@ -475,13 +486,17 @@ body {
 
 .note-form {
   max-width: 480px;
-  margin: 0 auto 50px;
+  margin: 0 auto clamp(30px, 8vw, 50px);
   background: var(--paper);
   border-radius: var(--radius-md);
-  padding: 24px;
+  padding: clamp(16px, 5vw, 24px);
   box-shadow: 0 20px 40px rgba(0,0,0,0.18);
   display: flex; flex-direction: column; gap: 14px;
   border: 1px solid #F0E6D8;
+}
+
+@media (max-width: 480px) {
+  #note-submit { align-self: stretch; justify-content: center; }
 }
 
 .note-form input, .note-form textarea {
@@ -533,6 +548,10 @@ body {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
   gap: 22px;
+}
+
+@media (max-width: 380px) {
+  .corkboard { grid-template-columns: 1fr; gap: 16px; }
 }
 
 .corkboard-empty {
@@ -596,5 +615,25 @@ body {
   .envelope-front-right { border-width: 0 105px 72px 0; }
   .envelope-flap { border-width: 72px 105px 0 105px; }
   .letter { width: 190px; }
+  .letter-face { padding: 20px 14px; }
+  .letter-title { font-size: 1.5rem; }
   .pinboard-section { margin: 0; border-radius: 0; }
+}
+
+@media (max-width: 360px) {
+  .envelope-scene { width: 210px; }
+  .envelope { width: 185px; height: 114px; }
+  .envelope-front-left { border-width: 0 0 63px 92px; }
+  .envelope-front-right { border-width: 0 92px 63px 0; }
+  .envelope-flap { border-width: 63px 92px 0 92px; }
+  .letter { width: 165px; }
+  .letter-title { font-size: 1.3rem; }
+  .moon { width: 50px; height: 50px; }
+}
+
+/* Short / landscape mobile screens: keep the intro from overflowing vertically */
+@media (max-height: 560px) {
+  .envelope-scene { transform: scale(0.75); }
+  .tap-hint { bottom: 3%; font-size: 1.1rem; }
+  .moon { width: 46px; height: 46px; top: 6%; }
 }
