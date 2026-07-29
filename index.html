@@ -111,22 +111,45 @@
             <span class="peg" aria-hidden="true">📌</span>
             <div class="polaroid">
               <div class="polaroid-img-wrap">
-                <img src="assets/photo4.png" alt="Forever and ever" class="polaroid-img" />
+                <img src="assets/8d488384-b633-4b7a-b7ed-17b9cc5cf59c.jpg" alt="Forever and ever" class="polaroid-img" />
                 <span class="paw-badge bottom-left">🐾</span>
               </div>
-              <figcaption>Forever my favorite person 💖</figcaption>
+              <figcaption></figcaption>
             </div>
           </figure>
 
         </div>
 
-        <button class="carousel-btn prev" id="prev-btn" aria-label="Previous photo">&#10094;</button>
+<button class="carousel-btn prev" id="prev-btn" aria-label="Previous photo">&#10094;</button>
         <button class="carousel-btn next" id="next-btn" aria-label="Next photo">&#10095;</button>
 
         <div class="carousel-dots" id="carousel-dots"></div>
+
+        <!-- Mode Toggle Button -->
+        <div class="mode-toggle-wrap">
+          <button type="button" id="toggle-gallery-btn" class="gallery-toggle-btn">
+            <span class="btn-icon">🖼️</span> View All Photos (Gallery Mode)
+          </button>
+        </div>
       </div>
+
+
+<!-- GALLERY GRID VIEW (Hidden by default) -->
+<div class="gallery-view" id="gallery-view" hidden>
+  <div class="gallery-header">
+    <button type="button" class="back-to-carousel-btn" id="back-to-carousel-btn">
+      <span>🎠</span> Back to Carousel
+    </button>
+  </div>
+  <div class="gallery-grid" id="gallery-grid"></div>
+</div>
     </section>
 
+    <!-- LIGHTBOX MODAL FOR GALLERY IMAGES -->
+    <div id="gallery-lightbox" class="gallery-lightbox" aria-hidden="true">
+      <span class="lightbox-close" id="lightbox-close">&times;</span>
+      <img id="lightbox-img" class="lightbox-content" alt="Enlarged view" />
+    </div>
     <!-- ===================== PINBOARD SECTION ===================== -->
     <section class="pinboard-section" id="pinboard" aria-label="Leave a note">
       <p class="section-eyebrow">our love board 🐾</p>

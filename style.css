@@ -322,10 +322,31 @@ body {
   padding-top: 30px;
 }
 
+/* ============ ENVELOPE MOBILE RESPONSIVENESS FIX ============ */
 @media (max-width: 480px) {
-  .slide { padding: 0 6px; }
-  .polaroid { padding: 12px 12px 18px; max-width: 320px; }
-  .polaroid figcaption { font-size: 1.25rem; margin-top: 10px; }
+  .ear { width: 60px; height: 60px; }
+  
+  /* Scale down the entire envelope scene proportionally so everything fits */
+  .envelope-scene { 
+    transform: scale(0.85);
+    transform-origin: center center;
+  }
+  
+  .pinboard-section { margin: 0; border-radius: 0; }
+}
+
+@media (max-width: 380px) {
+  .envelope-scene { 
+    transform: scale(0.72); 
+    transform-origin: center center;
+  }
+  .moon { width: 50px; height: 50px; }
+}
+
+/* Ensure letter popup translates correctly when open */
+#envelope-overlay.is-opening .letter { 
+  opacity: 1; 
+  transform: translate(-50%, -90px) scale(1); 
 }
 
 .clothesline {
@@ -558,9 +579,6 @@ body {
   gap: 22px;
 }
 
-@media (max-width: 380px) {
-  .corkboard { grid-template-columns: 1fr; gap: 16px; }
-}
 
 .corkboard-empty {
   grid-column: 1 / -1;
@@ -644,4 +662,156 @@ body {
   .envelope-scene { transform: scale(0.75); }
   .tap-hint { bottom: 3%; font-size: 1.1rem; }
   .moon { width: 46px; height: 46px; top: 6%; }
+}
+
+/* ============ GALLERY MODE TOGGLE & GRID ============ */
+.mode-toggle-wrap {
+  display: flex;
+  justify-content: center;
+  margin-top: 20px;
+}
+
+.gallery-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--paper);
+  color: var(--midnight);
+  border: 2px solid var(--sky);
+  padding: 10px 20px;
+  border-radius: 999px;
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 0.95rem;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(27, 42, 74, 0.08);
+  transition: all 0.25s ease;
+}
+
+.gallery-toggle-btn:hover {
+  background: var(--sky);
+  color: var(--midnight);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(27, 42, 74, 0.15);
+}
+
+.gallery-view {
+  max-width: 900px;
+  margin: 30px auto 0;
+  animation: fadeIn 0.4s ease forwards;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 16px;
+  padding: 10px;
+}
+
+.gallery-item {
+  position: relative;
+  background: var(--paper);
+  padding: 8px;
+  border-radius: 12px;
+  box-shadow: 0 6px 16px rgba(27, 42, 74, 0.1);
+  border: 1px solid #F0E6D8;
+  cursor: pointer;
+  overflow: hidden;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.gallery-item:hover {
+  transform: scale(1.04) rotate(1deg);
+  box-shadow: 0 10px 24px rgba(27, 42, 74, 0.18);
+  z-index: 2;
+}
+
+.gallery-item img {
+  width: 100%;
+  height: 180px;
+  object-fit: cover;
+  border-radius: 8px;
+  display: block;
+}
+
+/* Lightbox overlay */
+.gallery-lightbox {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: rgba(27, 42, 74, 0.88);
+  backdrop-filter: blur(5px);
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.gallery-lightbox.is-active {
+  display: flex;
+}
+
+.gallery-header {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+.back-to-carousel-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--midnight);
+  color: var(--paper);
+  border: none;
+  padding: 10px 22px;
+  border-radius: 999px;
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 0.95rem;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(27, 42, 74, 0.15);
+  transition: transform 0.2s ease, background 0.2s ease;
+}
+
+.back-to-carousel-btn:hover {
+  background: var(--royal);
+  transform: translateY(-2px);
+}
+
+.lightbox-content {
+  max-width: 90vw;
+  max-height: 85vh;
+  border-radius: 12px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+  border: 4px solid var(--paper);
+  object-fit: contain;
+}
+
+.lightbox-close {
+  position: absolute;
+  top: 20px;
+  right: 30px;
+  color: #fff;
+  font-size: 2.5rem;
+  font-weight: bold;
+  cursor: pointer;
+  line-height: 1;
+}
+
+@media (max-width: 480px) {
+  .gallery-grid {
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    gap: 10px;
+  }
+  .gallery-item img {
+    height: 130px;
+  }
+
+  
 }

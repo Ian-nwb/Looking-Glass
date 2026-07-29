@@ -160,9 +160,9 @@
     });
   }
 
-  window.addEventListener('load', () => {
-    setTimeout(openEnvelope, 550);
-  });
+  // window.addEventListener('load', () => {
+  //   setTimeout(openEnvelope, 550);
+  // });
 
   /* ================= CAROUSEL ================= */
   const track = document.getElementById('carousel-track');
@@ -312,4 +312,113 @@
     initCuteCanvasBackground();
     loadNotes();
   });
+
+  /* ================= GALLERY MODE ================= */
+  // List of all asset images located in assets/
+  const ASSETS_IMAGES = [
+    'assets/photo1.png',
+    'assets/photo2.png',
+    'assets/photo3.png',
+    'assets/8d488384-b633-4b7a-b7ed-17b9cc5cf59c.jpg',
+    'assets/9abd7886-d68d-436a-9f8a-a74a2...jpg',
+    'assets/b7054d50-8418-4cc7-95ff-c7767b...jpg',
+    'assets/d1a92325-d0c4-4850-9e8d-504...jpg',
+    'assets/d13ebe8c-c004-4278-bcca-d8aaa...jpg',
+    'assets/IMG_0390.HEIC',
+    'assets/IMG_0393.HEIC',
+    'assets/IMG_0395.HEIC',
+    'assets/IMG_20280627_154215_878.jpg',
+    'assets/IMG_20280627_154410_556.jpg',
+    'assets/IMG_20280627_184709_950.jpg',
+    'assets/IMG_20280627_213417_163.jpg',
+    'assets/IMG_20280628_024029_950.jpg',
+    'assets/IMG_20280628_115027.jpg',
+    'assets/IMG_20280628_115134.jpg',
+    'assets/IMG_20280628_115259_651.jpg'
+  ];
+
+  const toggleGalleryBtn = document.getElementById('toggle-gallery-btn');
+  const carouselEl = document.getElementById('carousel');
+  const galleryViewEl = document.getElementById('gallery-view');
+  const galleryGridEl = document.getElementById('gallery-grid');
+  const lightboxEl = document.getElementById('gallery-lightbox');
+  const lightboxImg = document.getElementById('lightbox-img');
+  const lightboxClose = document.getElementById('lightbox-close');
+
+  let isGalleryMode = false;
+
+  function buildGalleryGrid() {
+    if (!galleryGridEl) return;
+    galleryGridEl.innerHTML = '';
+
+    ASSETS_IMAGES.forEach((src) => {
+      // Skip unsupported HEIC files if browser cannot render them directly
+      if (src.toLowerCase().endsWith('.heic')) return;
+
+      const item = document.createElement('div');
+      item.className = 'gallery-item';
+      
+      const img = document.createElement('img');
+      img.src = src;
+      img.alt = 'Memory photo';
+      img.loading = 'lazy';
+
+      item.appendChild(img);
+      item.addEventListener('click', () => openLightbox(src));
+      galleryGridEl.appendChild(item);
+    });
+  }
+
+  function openLightbox(src) {
+    if (!lightboxEl || !lightboxImg) return;
+    lightboxImg.src = src;
+    lightboxEl.classList.add('is-active');
+    lightboxEl.setAttribute('aria-hidden', 'false');
+  }
+
+  function closeLightbox() {
+    if (!lightboxEl) return;
+    lightboxEl.classList.remove('is-active');
+    lightboxEl.setAttribute('aria-hidden', 'true');
+  }
+
+  if (toggleGalleryBtn) {
+    toggleGalleryBtn.addEventListener('click', () => {
+      isGalleryMode = !isGalleryMode;
+
+      if (isGalleryMode) {
+        stopAutoplay();
+        carouselEl.style.display = 'none';
+        galleryViewEl.removeAttribute('hidden');
+        buildGalleryGrid();
+        toggleGalleryBtn.innerHTML = '<span class="btn-icon">🎠</span> Switch to Carousel Mode';
+      } else {
+        carouselEl.style.display = 'block';
+        galleryViewEl.setAttribute('hidden', '');
+        startAutoplay();
+        toggleGalleryBtn.innerHTML = '<span class="btn-icon">🖼️</span> View All Photos (Gallery Mode)';
+      }
+    });
+  }
+
+  if (lightboxClose) lightboxClose.addEventListener('click', closeLightbox);
+  if (lightboxEl) {
+    lightboxEl.addEventListener('click', (e) => {
+      if (e.target === lightboxEl) closeLightbox();
+    });
+  }
+
+  const backToCarouselBtn = document.getElementById('back-to-carousel-btn');
+
+function showCarouselMode() {
+  isGalleryMode = false;
+  carouselEl.style.display = 'block';
+  galleryViewEl.setAttribute('hidden', '');
+  startAutoplay();
+  toggleGalleryBtn.innerHTML = '<span class="btn-icon">🖼️</span> View All Photos (Gallery Mode)';
+}
+
+if (backToCarouselBtn) {
+  backToCarouselBtn.addEventListener('click', showCarouselMode);
+}
 })();
