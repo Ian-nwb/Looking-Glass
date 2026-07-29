@@ -176,11 +176,19 @@ body {
 }
 
 .wax-seal {
-  position: absolute; top: 55px; left: 50%; transform: translateX(-50%) rotate(180deg);
-  width: 44px; height: 44px; border-radius: 50%;
+  position: absolute;
+  top: 0;                          /* pin to the tip of the triangle */
+  left: 50%;
+  /* translateY(-50%) centers the seal on the tip point */
+  transform: translate(-50%, -50%) rotate(180deg);
+  width: var(--wax-size);
+  height: var(--wax-size);
+  border-radius: 50%;
   background: var(--accent-pink);
-  display: flex; align-items: center; justify-content: center;
-  font-size: 1.2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: clamp(0.85rem, 3vw, 1.2rem);
   box-shadow: 0 4px 10px rgba(0,0,0,0.2);
 }
 
