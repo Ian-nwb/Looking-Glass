@@ -502,7 +502,7 @@ body {
   margin: 0 12px;
   border: 2px dashed rgba(168, 200, 236, 0.6);
   box-shadow: 0 12px 32px rgba(107, 155, 210, 0.12);
-  overflow: visible; /* FIX: Changed from overflow-x: hidden to visible */
+  overflow-x: hidden;
 }
 
 .pinboard-section .section-title { 
@@ -582,16 +582,11 @@ body {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
   gap: 22px;
-  overflow: visible; /* FIX: Changed from overflow-x: hidden to visible */
-  padding: 10px 0; /* Add padding to prevent edge clipping */
+  overflow-x: hidden;
 }
 
 @media (max-width: 380px) {
-  .corkboard { 
-    grid-template-columns: 1fr; 
-    gap: 16px;
-    overflow: visible;
-  }
+  .corkboard { grid-template-columns: 1fr; gap: 16px; }
 }
 
 .corkboard-empty {
@@ -613,20 +608,13 @@ body {
   border: 1px solid #F0E6D8;
   max-width: 100%;
   word-wrap: break-word;
-  overflow: visible !important; /* Prevent internal clipping */
-  min-height: 100px; /* Ensure minimum height */
-  display: flex;
-  flex-direction: column;
 }
 
 .note-card::before {
   content: "📌";
   position: absolute;
-  top: -14px; 
-  left: 50%; 
-  transform: translateX(-50%);
+  top: -14px; left: 50%; transform: translateX(-50%);
   font-size: 1.3rem;
-  z-index: 2; /* Ensure pin stays on top */
 }
 
 .note-card .note-msg {
@@ -635,8 +623,6 @@ body {
   margin: 6px 0 10px;
   color: var(--midnight);
   word-break: break-word;
-  overflow: visible; /* Prevent text clipping */
-  flex: 1;
 }
 
 .note-card .note-name {
@@ -675,29 +661,7 @@ body {
   .letter { width: 200px; }
   .letter-face { padding: 20px 14px; }
   .letter-title { font-size: 1.5rem; }
-  
-  /* Mobile fixes for pinboard */
-  .pinboard-section { 
-    margin: 0; 
-    border-radius: 0;
-    overflow: visible; /* Keep visible on mobile */
-  }
-  
-  .corkboard {
-    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-    gap: 20px;
-    overflow: visible;
-    padding: 10px 5px; /* More padding on mobile */
-  }
-  
-  .note-card {
-    min-height: 80px;
-    padding: 16px 14px 12px;
-  }
-  
-  .note-card .note-msg {
-    font-size: 1.1rem;
-  }
+  .pinboard-section { margin: 0; border-radius: 0; }
 }
 
 @media (max-width: 360px) {
@@ -714,12 +678,6 @@ body {
   .letter { width: 160px; }
   .letter-title { font-size: 1.2rem; }
   .moon { width: 45px; height: 45px; }
-  
-  .corkboard {
-    grid-template-columns: 1fr;
-    gap: 16px;
-    overflow: visible;
-  }
 }
 
 /* Short / landscape mobile screens */
