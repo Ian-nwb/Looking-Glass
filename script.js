@@ -1,6 +1,44 @@
 (() => {
   'use strict';
 
+  /* ================= PHOTOS — single source of truth =================
+     Add/remove photos here ONLY. Carousel, dots, and gallery grid all
+     read from this one array, so nothing gets out of sync.
+     For 50+ photos, just keep adding objects (or generate them, see
+     the commented example below).
+  ====================================================================== */
+  const PHOTOS = [
+    { src: 'assets/1.jpg', alt: '', caption: '' },
+    { src: 'assets/2.jpg', alt: '', caption: '' },
+    { src: 'assets/3.jpg', alt: '', caption: '' },
+    { src: 'assets/4.jpg', alt: '', caption: '' },
+    { src: 'assets/5.jpg', alt: '', caption: '' },
+    { src: 'assets/6.jpg', alt: '', caption: '' },
+    { src: 'assets/7.jpg', alt: '', caption: '' },
+    { src: 'assets/8.jpg', alt: '', caption: '' },
+    { src: 'assets/9.jpg', alt: '', caption: '' },
+    { src: 'assets/10.jpg', alt: '', caption: '' },
+    { src: 'assets/11.jpg', alt: '', caption: '' },
+    { src: 'assets/12.jpg', alt: '', caption: '' },
+    { src: 'assets/13.jpg', alt: '', caption: '' },
+    { src: 'assets/14.jpg', alt: '', caption: '' },
+    { src: 'assets/15.jpg', alt: '', caption: '' },
+    { src: 'assets/16.jpg', alt: '', caption: '' },
+    { src: 'assets/17.jpg', alt: '', caption: '' },
+    { src: 'assets/18.jpg', alt: '', caption: '' },
+    { src: 'assets/19.jpg', alt: '', caption: '' },
+    { src: 'assets/20.jpg', alt: '', caption: '' },
+  ];
+
+  // Example for generating a numbered sequence instead of listing each one:
+  // const PHOTOS = Array.from({ length: 52 }, (_, i) => ({
+  //   src: `assets/${i + 1}.jpg`,
+  //   alt: '',
+  //   caption: '',
+  // }));
+
+  const PAW_POSITIONS = ['top-left', 'bottom-right', 'top-right', 'bottom-left'];
+
   /* ============ INTERACTIVE CANVAS BACKGROUND ============ */
   function initCuteCanvasBackground() {
     const canvas = document.createElement('canvas');
@@ -16,7 +54,6 @@
       height = canvas.height = window.innerHeight;
     });
 
-    // Ambient floating glow particles (Soft white, sky blue, & pastel blush glow)
     const particles = Array.from({ length: 35 }, () => ({
       x: Math.random() * width,
       y: Math.random() * height,
@@ -31,13 +68,11 @@
       vy: (Math.random() - 0.5) * 0.4,
     }));
 
-    // Mouse / touch cursor trail
     const trail = [];
     function addTrailPoint(x, y) {
       if (Math.random() < 0.3) {
         trail.push({
-          x,
-          y,
+          x, y,
           size: Math.random() * 12 + 8,
           alpha: 0.7,
           rotation: Math.random() * Math.PI * 2,
@@ -50,21 +85,16 @@
       if (t) addTrailPoint(t.clientX, t.clientY);
     }, { passive: true });
 
-    // Draw paw print in soft baby blue / deep slate blue tones (NO ORANGE)
     function drawPaw(x, y, size, alpha, rotation) {
       ctx.save();
       ctx.translate(x, y);
       ctx.rotate(rotation);
-      
-      // Cozy slate-blue paw color that matches the baby blue background
       ctx.fillStyle = `rgba(74, 112, 156, ${alpha})`;
 
-      // Main pad
       ctx.beginPath();
       ctx.arc(0, 0, size * 0.4, 0, Math.PI * 2);
       ctx.fill();
 
-      // Toe beans
       const toes = [-0.35, -0.12, 0.12, 0.35];
       toes.forEach((angle) => {
         const tx = Math.sin(angle) * (size * 0.65);
@@ -80,11 +110,9 @@
     function render() {
       ctx.clearRect(0, 0, width, height);
 
-      // 1. Render ambient floating particles
       particles.forEach((p) => {
         p.x += p.vx;
         p.y += p.vy;
-
         if (p.x < 0) p.x = width;
         if (p.x > width) p.x = 0;
         if (p.y < 0) p.y = height;
@@ -99,12 +127,11 @@
         ctx.shadowBlur = 0;
       });
 
-      // 2. Render mouse paw trail
       for (let i = trail.length - 1; i >= 0; i--) {
         const t = trail[i];
         drawPaw(t.x, t.y, t.size, t.alpha, t.rotation);
-        t.alpha -= 0.015; // Fade out gradually
-        t.y -= 0.2; // Drift up slightly
+        t.alpha -= 0.015;
+        t.y -= 0.2;
         if (t.alpha <= 0) trail.splice(i, 1);
       }
 
@@ -123,7 +150,6 @@
     if (hasOpened) return;
     hasOpened = true;
     overlay.classList.add('is-opening');
-
     setTimeout(closeOverlay, 1900);
   }
 
@@ -145,13 +171,8 @@
 
   if (overlay) {
     overlay.addEventListener('click', () => {
-      if (!hasOpened) {
-        openEnvelope();
-      } else {
-        skipToEnd();
-      }
+      if (!hasOpened) openEnvelope(); else skipToEnd();
     });
-
     overlay.addEventListener('keydown', (e) => {
       if (e.key === 'Enter' || e.key === ' ') {
         e.preventDefault();
@@ -160,18 +181,30 @@
     });
   }
 
-  // window.addEventListener('load', () => {
-  //   setTimeout(openEnvelope, 550);
-  // });
-
-  /* ================= CAROUSEL ================= */
+  /* ================= CAROUSEL (built from PHOTOS) ================= */
   const track = document.getElementById('carousel-track');
-  const slides = Array.from(track ? track.children : []);
   const dotsWrap = document.getElementById('carousel-dots');
   const prevBtn = document.getElementById('prev-btn');
   const nextBtn = document.getElementById('next-btn');
   let current = 0;
   let autoplayId = null;
+  let slides = [];
+
+  function buildCarouselSlides() {
+    if (!track) return;
+    track.innerHTML = PHOTOS.map((p, i) => `
+      <figure class="slide">
+        <span class="peg" aria-hidden="true">📌</span>
+        <div class="polaroid">
+          <div class="polaroid-img-wrap">
+            <img src="${p.src}" alt="${p.alt || ''}" class="polaroid-img" loading="lazy" />
+          </div>
+          <figcaption>${p.caption || ''}</figcaption>
+        </div>
+      </figure>
+    `).join('');
+    slides = Array.from(track.children);
+  }
 
   function renderDots() {
     if (!dotsWrap) return;
@@ -181,7 +214,7 @@
       dot.type = 'button';
       dot.setAttribute('aria-label', `Go to photo ${i + 1}`);
       if (i === current) dot.classList.add('active');
-      dot.addEventListener('click', () => goTo(i));
+      dot.addEventListener('click', () => { goTo(i); startAutoplay(); });
       dotsWrap.appendChild(dot);
     });
   }
@@ -199,14 +232,16 @@
 
   function startAutoplay() {
     stopAutoplay();
-    autoplayId = setInterval(() => goTo(current + 1), 4500);
+    autoplayId = setInterval(() => goTo(current + 1), 1500);
   }
 
   function stopAutoplay() {
     if (autoplayId) clearInterval(autoplayId);
   }
 
-  if (track && slides.length) {
+  function initCarousel() {
+    buildCarouselSlides();
+    if (!slides.length) return;
     renderDots();
     goTo(0);
     prevBtn && prevBtn.addEventListener('click', () => { goTo(current - 1); startAutoplay(); });
@@ -221,7 +256,6 @@
 
   /* ================= NOTES / CORKBOARD ================= */
   const corkboard = document.getElementById('corkboard');
-  const corkboardEmpty = document.getElementById('corkboard-empty');
   const form = document.getElementById('note-form');
   const nameInput = document.getElementById('note-name');
   const messageInput = document.getElementById('note-message');
@@ -307,36 +341,7 @@
     });
   }
 
-  /* ================= INITIALIZATION ================= */
-  document.addEventListener('DOMContentLoaded', () => {
-    initCuteCanvasBackground();
-    loadNotes();
-  });
-
-  /* ================= GALLERY MODE ================= */
-  // List of all asset images located in assets/
-  const ASSETS_IMAGES = [
-    'assets/photo1.png',
-    'assets/photo2.png',
-    'assets/photo3.png',
-    'assets/8d488384-b633-4b7a-b7ed-17b9cc5cf59c.jpg',
-    'assets/9abd7886-d68d-436a-9f8a-a74a2...jpg',
-    'assets/b7054d50-8418-4cc7-95ff-c7767b...jpg',
-    'assets/d1a92325-d0c4-4850-9e8d-504...jpg',
-    'assets/d13ebe8c-c004-4278-bcca-d8aaa...jpg',
-    'assets/IMG_0390.HEIC',
-    'assets/IMG_0393.HEIC',
-    'assets/IMG_0395.HEIC',
-    'assets/IMG_20280627_154215_878.jpg',
-    'assets/IMG_20280627_154410_556.jpg',
-    'assets/IMG_20280627_184709_950.jpg',
-    'assets/IMG_20280627_213417_163.jpg',
-    'assets/IMG_20280628_024029_950.jpg',
-    'assets/IMG_20280628_115027.jpg',
-    'assets/IMG_20280628_115134.jpg',
-    'assets/IMG_20280628_115259_651.jpg'
-  ];
-
+  /* ================= GALLERY MODE (built from PHOTOS) ================= */
   const toggleGalleryBtn = document.getElementById('toggle-gallery-btn');
   const carouselEl = document.getElementById('carousel');
   const galleryViewEl = document.getElementById('gallery-view');
@@ -348,23 +353,18 @@
   let isGalleryMode = false;
 
   function buildGalleryGrid() {
-    if (!galleryGridEl) return;
-    galleryGridEl.innerHTML = '';
-
-    ASSETS_IMAGES.forEach((src) => {
-      // Skip unsupported HEIC files if browser cannot render them directly
-      if (src.toLowerCase().endsWith('.heic')) return;
-
+    if (!galleryGridEl || galleryGridEl.childElementCount) return; // build once
+    PHOTOS.forEach((p) => {
       const item = document.createElement('div');
       item.className = 'gallery-item';
-      
+
       const img = document.createElement('img');
-      img.src = src;
-      img.alt = 'Memory photo';
+      img.src = p.src;
+      img.alt = p.alt || 'Memory photo';
       img.loading = 'lazy';
 
       item.appendChild(img);
-      item.addEventListener('click', () => openLightbox(src));
+      item.addEventListener('click', () => openLightbox(p.src));
       galleryGridEl.appendChild(item);
     });
   }
@@ -382,22 +382,26 @@
     lightboxEl.setAttribute('aria-hidden', 'true');
   }
 
+  function showGalleryMode() {
+    isGalleryMode = true;
+    stopAutoplay();
+    carouselEl.style.display = 'none';
+    galleryViewEl.removeAttribute('hidden');
+    buildGalleryGrid();
+    toggleGalleryBtn.innerHTML = '<span class="btn-icon">🎠</span> Switch to Carousel Mode';
+  }
+
+  function showCarouselMode() {
+    isGalleryMode = false;
+    carouselEl.style.display = 'block';
+    galleryViewEl.setAttribute('hidden', '');
+    startAutoplay();
+    toggleGalleryBtn.innerHTML = '<span class="btn-icon">🖼️</span> View All Photos (Gallery Mode)';
+  }
+
   if (toggleGalleryBtn) {
     toggleGalleryBtn.addEventListener('click', () => {
-      isGalleryMode = !isGalleryMode;
-
-      if (isGalleryMode) {
-        stopAutoplay();
-        carouselEl.style.display = 'none';
-        galleryViewEl.removeAttribute('hidden');
-        buildGalleryGrid();
-        toggleGalleryBtn.innerHTML = '<span class="btn-icon">🎠</span> Switch to Carousel Mode';
-      } else {
-        carouselEl.style.display = 'block';
-        galleryViewEl.setAttribute('hidden', '');
-        startAutoplay();
-        toggleGalleryBtn.innerHTML = '<span class="btn-icon">🖼️</span> View All Photos (Gallery Mode)';
-      }
+      if (isGalleryMode) showCarouselMode(); else showGalleryMode();
     });
   }
 
@@ -409,16 +413,12 @@
   }
 
   const backToCarouselBtn = document.getElementById('back-to-carousel-btn');
+  if (backToCarouselBtn) backToCarouselBtn.addEventListener('click', showCarouselMode);
 
-function showCarouselMode() {
-  isGalleryMode = false;
-  carouselEl.style.display = 'block';
-  galleryViewEl.setAttribute('hidden', '');
-  startAutoplay();
-  toggleGalleryBtn.innerHTML = '<span class="btn-icon">🖼️</span> View All Photos (Gallery Mode)';
-}
-
-if (backToCarouselBtn) {
-  backToCarouselBtn.addEventListener('click', showCarouselMode);
-}
+  /* ================= INITIALIZATION ================= */
+  document.addEventListener('DOMContentLoaded', () => {
+    initCuteCanvasBackground();
+    initCarousel();
+    loadNotes();
+  });
 })();
