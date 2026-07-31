@@ -589,12 +589,12 @@ body {
 }
 .form-status.is-error { color: #D9534F; }
 
-/* FIX: Made note cards wider and prevent truncation */
+/* FIX: Made note cards wider and taller */
 .corkboard {
   max-width: 900px;
   margin: 0 auto;
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); /* Made wider */
   gap: 22px;
   overflow: visible;
   padding: 10px 0;
@@ -616,11 +616,11 @@ body {
   font-size: 1.3rem;
 }
 
-/* FIX: Updated note-card to prevent truncation */
+/* FIX: Made note cards taller with more padding */
 .note-card {
   background: var(--paper);
   border-radius: 6px;
-  padding: 18px 16px 14px;
+  padding: 24px 20px 18px; /* Increased padding */
   box-shadow: 0 10px 24px rgba(0,0,0,0.18);
   position: relative;
   transform: rotate(var(--tilt, -1deg));
@@ -629,10 +629,9 @@ body {
   max-width: 100%;
   word-wrap: break-word;
   overflow: visible !important;
-  min-height: 100px;
+  min-height: 150px; /* Made taller */
   display: flex;
   flex-direction: column;
-  /* NEW: Prevent text truncation */
   white-space: normal !important;
   word-break: break-word !important;
   overflow-wrap: break-word !important;
@@ -649,24 +648,25 @@ body {
   z-index: 2;
 }
 
-/* FIX: Updated note message to prevent truncation */
+/* FIX: Updated note message with more space */
 .note-card .note-msg {
   font-size: 1.3rem;
-  line-height: 1.5; /* Increased for better readability */
-  margin: 6px 0 10px;
+  line-height: 1.6; /* More line spacing */
+  margin: 8px 0 12px;
   color: var(--midnight);
   word-break: break-word !important;
   overflow: visible !important;
   flex: 1;
-  /* NEW: Prevent text truncation */
   white-space: normal !important;
   overflow-wrap: break-word !important;
   max-width: 100%;
   display: block;
-  /* Remove any text truncation */
   text-overflow: clip !important;
   -webkit-line-clamp: unset !important;
   -webkit-box-orient: unset !important;
+  /* Allow unlimited height */
+  max-height: none !important;
+  height: auto !important;
 }
 
 .note-card .note-name {
@@ -679,6 +679,8 @@ body {
   margin: 0;
   overflow: visible !important;
   white-space: normal !important;
+  padding-top: 8px;
+  border-top: 1px solid rgba(168, 200, 236, 0.3);
 }
 
 .site-footer {
@@ -708,7 +710,6 @@ body {
   .letter-face { padding: 20px 14px; }
   .letter-title { font-size: 1.5rem; }
   
-  /* Mobile fixes for pinboard - wider cards */
   .pinboard-section { 
     margin: 0; 
     border-radius: 0;
@@ -716,20 +717,20 @@ body {
   }
   
   .corkboard {
-    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); /* Wider on mobile */
     gap: 20px;
     overflow: visible;
     padding: 10px 5px;
   }
   
   .note-card {
-    min-height: 80px;
-    padding: 16px 14px 12px;
+    min-height: 120px; /* Taller on mobile */
+    padding: 20px 16px 14px;
   }
   
   .note-card .note-msg {
     font-size: 1.1rem;
-    line-height: 1.4;
+    line-height: 1.5;
   }
 
   .carousel-dots {
@@ -764,6 +765,10 @@ body {
     grid-template-columns: 1fr;
     gap: 16px;
     overflow: visible;
+  }
+  
+  .note-card {
+    min-height: 100px;
   }
 
   .carousel-dots {
