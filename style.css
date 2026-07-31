@@ -942,3 +942,40 @@ body {
     height: 130px;
   }
 }
+
+/* Gallery Pagination Styles */
+.gallery-pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 20px;
+  padding: 20px 0;
+  margin-top: 20px;
+}
+
+.pagination-btn {
+  padding: 10px 24px;
+  background: #4a709c;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.3s ease;
+}
+
+.pagination-btn:hover:not(:disabled) {
+  background: #2c4a6e;
+  transform: translateY(-2px);
+}
+
+.pagination-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.pagination-info {
+  font-size: 16px;
+  color: #333;
+  font-weight: 500;
+}

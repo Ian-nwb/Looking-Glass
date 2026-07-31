@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Bulk Upload to Cloudinary</title>
+  <script src="https://upload-widget.cloudinary.com/global/all.js"></script>
+  <style>
+    body { font-family: Arial; padding: 40px; text-align: center; background: #f0f0f0; }
+    #upload-btn { 
+      background: #34495e; 
+      color: white; 
+      border: none; 
+      padding: 20px 40px; 
+      font-size: 20px; 
+      border-radius: 8px; 
+      cursor: pointer;
+      margin: 20px;
+    }
+    #upload-btn:hover { background: #2c3e50; }
+    .status { margin-top: 20px; font-size: 14px; color: #666; }
+    .success { color: #27ae60; }
+    .error { color: #e74c3c; }
+  </style>
+</head>
+<body>
+  <h2>📸 Upload Photos to Cloudinary</h2>
+  <p>This will keep your filenames as public IDs</p>
+  <button id="upload-btn">Choose Photos to Upload</button>
+  <div id="status" class="status">Ready to upload</div>
+  
+  <script>
+    // Your Cloudinary credentials
+    const UPLOAD_PRESET = 'memories-preset'; // You need to create this!
+    const CLOUD_NAME = 'fpdekah6';
+    
+    // Create the upload widget
+    const widget = cloudinary.createUploadWidget({
+      cloudName: CLOUD_NAME,
+      uploadPreset: UPLOAD_PRESET,
+      folder: 'memories',
+      multiple: true,
+      // This keeps your original filename
+      publicId: '',
+      cropping: false,
+      sources: ['local', 'url', 'camera', 'dropbox', 'google_drive'],
+      clientAllowedFormats: ['jpg', 'jpeg', 'png', 'gif', 'webp']
+    }, (error, result) => {
+      const status = document.getElementById('status');
+      
+      if (error) {
+        status.className = 'status error';
+        status.textContent = `❌ Error: ${error.message}`;
+        console.error(error);
+        return;
+      }
+      
+      if (result.event === 'success') {
+        status.className = 'status success';
+        status.textContent = `✅ Uploaded: ${result.info.public_id}`;
+        console.log('✅ Success:', result.info);
+      }
+      
+      if (result.event === 'queue-complete') {
+        status.className = 'status success';
+        status.textContent = `🎉 All ${result.info.queue.length} files uploaded successfully!`;
+        console.log('🎉 All done!');
+        // Optional: refresh after 3 seconds
+        // setTimeout(() => location.reload(), 3000);
+      }
+    });
+    
+    document.getElementById('upload-btn').addEventListener('click', () => {
+      widget.open();
+    });
+  </script>
+</body>
+</html>

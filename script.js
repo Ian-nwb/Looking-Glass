@@ -1,41 +1,60 @@
 (() => {
   'use strict';
 
-  /* ================= PHOTOS — single source of truth =================
-     Add/remove photos here ONLY. Carousel, dots, and gallery grid all
-     read from this one array, so nothing gets out of sync.
-     For 50+ photos, just keep adding objects (or generate them, see
-     the commented example below).
-  ====================================================================== */
-  const PHOTOS = [
-    { src: 'assets/1.jpg', alt: '', caption: '' },
-    { src: 'assets/2.jpg', alt: '', caption: '' },
-    { src: 'assets/3.jpg', alt: '', caption: '' },
-    { src: 'assets/4.jpg', alt: '', caption: '' },
-    { src: 'assets/5.jpg', alt: '', caption: '' },
-    { src: 'assets/6.jpg', alt: '', caption: '' },
-    { src: 'assets/7.jpg', alt: '', caption: '' },
-    { src: 'assets/8.jpg', alt: '', caption: '' },
-    { src: 'assets/9.jpg', alt: '', caption: '' },
-    { src: 'assets/10.jpg', alt: '', caption: '' },
-    { src: 'assets/11.jpg', alt: '', caption: '' },
-    { src: 'assets/12.jpg', alt: '', caption: '' },
-    { src: 'assets/13.jpg', alt: '', caption: '' },
-    { src: 'assets/14.jpg', alt: '', caption: '' },
-    { src: 'assets/15.jpg', alt: '', caption: '' },
-    { src: 'assets/16.jpg', alt: '', caption: '' },
-    { src: 'assets/17.jpg', alt: '', caption: '' },
-    { src: 'assets/18.jpg', alt: '', caption: '' },
-    { src: 'assets/19.jpg', alt: '', caption: '' },
-    { src: 'assets/20.jpg', alt: '', caption: '' },
-  ];
+  /* ================= CLOUDINARY CONFIGURATION ================= */
+  const CLOUDINARY = {
+    cloudName: 'fpdekah6',
+    folder: 'memories'
+  };
 
-  // Example for generating a numbered sequence instead of listing each one:
-  // const PHOTOS = Array.from({ length: 52 }, (_, i) => ({
-  //   src: `assets/${i + 1}.jpg`,
-  //   alt: '',
-  //   caption: '',
-  // }));
+  /* ================= CLOUDINARY URL GENERATOR ================= */
+  function getCloudinaryUrl(publicId, options = {}) {
+    const {
+      width = null,
+      height = null,
+      crop = 'fill',
+      quality = 'auto',
+      format = 'auto',
+      gravity = 'center'
+    } = options;
+
+    let transformParts = [];
+    
+    if (width || height) {
+      let sizeStr = '';
+      if (width) sizeStr += `w_${width}`;
+      if (height) sizeStr += sizeStr ? `,h_${height}` : `h_${height}`;
+      transformParts.push(`c_${crop},${sizeStr}`);
+    }
+    
+    if (quality) transformParts.push(`q_${quality}`);
+    if (format) transformParts.push(`f_${format}`);
+    if (gravity) transformParts.push(`g_${gravity}`);
+    
+    const transformString = transformParts.length ? transformParts.join(',') : '';
+    
+    let url = `https://res.cloudinary.com/${CLOUDINARY.cloudName}/image/upload`;
+    if (transformString) url += `/${transformString}`;
+    if (CLOUDINARY.folder) url += `/${CLOUDINARY.folder}`;
+    url += `/${publicId}`;
+    
+    return url;
+  }
+
+  /* ================= PHOTOS — GENERATED WITH CLOUDINARY ================= */
+  const TOTAL_PHOTOS = 600;
+  const GALLERY_PAGE_SIZE = 20; // Show 20 images per page in gallery mode
+  
+  // Generate all photos (but carousel only uses what it needs)
+  const ALL_PHOTOS = Array.from({ length: TOTAL_PHOTOS }, (_, i) => ({
+    publicId: `photo_${i + 1}`,
+    alt: `Memory ${i + 1}`,
+    caption: ''
+  }));
+
+  /* ================= CAROUSEL PHOTOS — Only first 20 for performance ================= */
+  // Carousel only loads first 20 images (or adjust as needed)
+  const CAROUSEL_PHOTOS = ALL_PHOTOS.slice(0, 20);
 
   const PAW_POSITIONS = ['top-left', 'bottom-right', 'top-right', 'bottom-left'];
 
@@ -181,7 +200,7 @@
     });
   }
 
-  /* ================= CAROUSEL (built from PHOTOS) ================= */
+  /* ================= CAROUSEL (built from CAROUSEL_PHOTOS) ================= */
   const track = document.getElementById('carousel-track');
   const dotsWrap = document.getElementById('carousel-dots');
   const prevBtn = document.getElementById('prev-btn');
@@ -196,17 +215,15 @@
   let currentX = 0;
   let isDragging = false;
   let isSwiping = false;
-  const SWIPE_THRESHOLD = 50; // Minimum pixels to trigger a swipe
+  const SWIPE_THRESHOLD = 50;
 
   function initDragSupport() {
     if (!carouselWrapper || !track) return;
 
-    // Touch events for mobile
     carouselWrapper.addEventListener('touchstart', handleTouchStart, { passive: true });
     carouselWrapper.addEventListener('touchmove', handleTouchMove, { passive: false });
     carouselWrapper.addEventListener('touchend', handleTouchEnd, { passive: true });
 
-    // Mouse events for desktop drag (optional)
     carouselWrapper.addEventListener('mousedown', handleMouseDown);
     carouselWrapper.addEventListener('mousemove', handleMouseMove);
     carouselWrapper.addEventListener('mouseup', handleMouseUp);
@@ -219,7 +236,6 @@
       isDragging = true;
       isSwiping = false;
       stopAutoplay();
-      // Reset transition for smooth drag
       track.style.transition = 'none';
     }
   }
@@ -231,12 +247,10 @@
     currentX = e.touches[0].clientX;
     const diff = currentX - startX;
     
-    // Only consider it a swipe if movement is significant
     if (Math.abs(diff) > 10) {
       isSwiping = true;
     }
     
-    // Add visual feedback during drag
     if (isSwiping) {
       const trackWidth = track.offsetWidth;
       const offset = -current * trackWidth + diff;
@@ -251,21 +265,16 @@
     if (isSwiping) {
       const diff = currentX - startX;
       
-      // Determine if swipe was significant enough
       if (Math.abs(diff) > SWIPE_THRESHOLD) {
         if (diff < 0) {
-          // Swipe left -> next slide
           goTo(current + 1);
         } else {
-          // Swipe right -> previous slide
           goTo(current - 1);
         }
       } else {
-        // Not enough movement, snap back
         goTo(current);
       }
       
-      // Reset transition for smooth animation
       track.style.transition = 'transform 0.55s cubic-bezier(.3, .7, .2, 1)';
       isSwiping = false;
     }
@@ -326,9 +335,23 @@
   const lightboxImg = document.getElementById('lightbox-img');
   const lightboxClose = document.getElementById('lightbox-close');
 
-  function openLightbox(src) {
+  function openLightbox(publicId) {
     if (!lightboxEl || !lightboxImg) return;
-    lightboxImg.src = src;
+    
+    const highResUrl = getCloudinaryUrl(publicId, {
+      width: 1920,
+      height: 1080,
+      crop: 'limit',
+      quality: 'auto',
+      format: 'auto'
+    });
+
+    const img = new Image();
+    img.onload = () => {
+      lightboxImg.src = highResUrl;
+    };
+    img.src = highResUrl;
+    
     lightboxEl.classList.add('is-active');
     lightboxEl.setAttribute('aria-hidden', 'false');
     document.body.style.overflow = 'hidden';
@@ -339,9 +362,13 @@
     lightboxEl.classList.remove('is-active');
     lightboxEl.setAttribute('aria-hidden', 'true');
     document.body.style.overflow = '';
+    setTimeout(() => {
+      if (!lightboxEl.classList.contains('is-active')) {
+        lightboxImg.src = '';
+      }
+    }, 300);
   }
 
-  // Keyboard support for lightbox
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && lightboxEl && lightboxEl.classList.contains('is-active')) {
       closeLightbox();
@@ -355,45 +382,62 @@
     });
   }
 
+  /* ================= BUILD CAROUSEL WITH CLOUDINARY (USES CAROUSEL_PHOTOS) ================= */
   function buildCarouselSlides() {
     if (!track) return;
-    track.innerHTML = PHOTOS.map((p, i) => `
-      <figure class="slide">
-        <span class="peg" aria-hidden="true">📌</span>
-        <div class="polaroid" data-src="${p.src}">
-          <div class="polaroid-img-wrap">
-            <img src="${p.src}" alt="${p.alt || ''}" class="polaroid-img" loading="lazy" />
+    
+    track.innerHTML = CAROUSEL_PHOTOS.map((p, i) => {
+      const src = getCloudinaryUrl(p.publicId, { width: 800, height: 600 });
+      const srcSet = `
+        ${getCloudinaryUrl(p.publicId, { width: 400, height: 300 })} 400w,
+        ${getCloudinaryUrl(p.publicId, { width: 800, height: 600 })} 800w,
+        ${getCloudinaryUrl(p.publicId, { width: 1200, height: 900 })} 1200w,
+        ${getCloudinaryUrl(p.publicId, { width: 1600, height: 1200 })} 1600w
+      `;
+      
+      return `
+        <figure class="slide">
+          <span class="peg" aria-hidden="true">📌</span>
+          <div class="polaroid" data-public-id="${p.publicId}">
+            <div class="polaroid-img-wrap">
+              <img 
+                src="${src}"
+                srcset="${srcSet}"
+                sizes="(max-width: 600px) 400px, (max-width: 1024px) 800px, 1200px"
+                alt="${p.alt || ''}" 
+                class="polaroid-img" 
+                loading="${i < 3 ? 'eager' : 'lazy'}"
+                decoding="async"
+              />
+            </div>
+            <figcaption>${p.caption || ''}</figcaption>
           </div>
-          <figcaption>${p.caption || ''}</figcaption>
-        </div>
-      </figure>
-    `).join('');
+        </figure>
+      `;
+    }).join('');
+    
     slides = Array.from(track.children);
     
-    // Add click listeners to polaroid images in carousel
     slides.forEach((slide) => {
       const polaroid = slide.querySelector('.polaroid');
       if (polaroid) {
         polaroid.addEventListener('click', function(e) {
-          // Don't trigger if swiping
           if (isSwiping) return;
-          const src = this.getAttribute('data-src');
-          if (src) openLightbox(src);
+          const publicId = this.getAttribute('data-public-id');
+          if (publicId) openLightbox(publicId);
         });
-        // Add cursor pointer to indicate clickable
         polaroid.style.cursor = 'pointer';
       }
     });
   }
 
-  /* ================= CAROUSEL DOTS - Show ONLY when 5 or fewer images ================= */
+  /* ================= CAROUSEL DOTS ================= */
   function renderDots() {
     if (!dotsWrap) return;
     dotsWrap.innerHTML = '';
     
     const totalSlides = slides.length;
     
-    // ONLY show dots if we have 5 or fewer slides
     if (totalSlides <= 5) {
       dotsWrap.style.display = 'flex';
       
@@ -438,7 +482,7 @@
 
   function startAutoplay() {
     stopAutoplay();
-    autoplayId = setInterval(() => goTo(current + 1), 1500);
+    autoplayId = setInterval(() => goTo(current + 1), 7500);
   }
 
   function stopAutoplay() {
@@ -451,7 +495,6 @@
     renderDots();
     goTo(0);
     
-    // Initialize drag support for mobile
     initDragSupport();
     
     prevBtn && prevBtn.addEventListener('click', () => { goTo(current - 1); startAutoplay(); });
@@ -520,15 +563,13 @@
       e.preventDefault();
       const message = messageInput.value.trim();
       
-      // Check if message is empty
       if (!message) {
         statusEl.textContent = 'Write a little something first!';
         statusEl.classList.add('is-error');
         return;
       }
 
-      // FIX: Character limit check - now matching HTML maxlength of 2000
-      const MAX_CHARS = 2000; // Changed from 596 to 2000 to match HTML
+      const MAX_CHARS = 2000;
       if (message.length > MAX_CHARS) {
         statusEl.textContent = `Message is too long! Maximum ${MAX_CHARS} characters. You have ${message.length} characters.`;
         statusEl.classList.add('is-error');
@@ -563,37 +604,120 @@
     });
   }
 
-  /* ================= GALLERY MODE (built from PHOTOS) ================= */
+  /* ================= GALLERY MODE WITH PAGINATION ================= */
   const toggleGalleryBtn = document.getElementById('toggle-gallery-btn');
   const carouselEl = document.getElementById('carousel');
   const galleryViewEl = document.getElementById('gallery-view');
   const galleryGridEl = document.getElementById('gallery-grid');
 
   let isGalleryMode = false;
+  let currentPage = 1;
+  const totalPages = Math.ceil(TOTAL_PHOTOS / GALLERY_PAGE_SIZE);
 
-  function buildGalleryGrid() {
-    if (!galleryGridEl || galleryGridEl.childElementCount) return;
-    PHOTOS.forEach((p) => {
+  // Create pagination controls
+  function createPaginationControls() {
+    const existingControls = document.querySelector('.gallery-pagination');
+    if (existingControls) existingControls.remove();
+
+    const controls = document.createElement('div');
+    controls.className = 'gallery-pagination';
+    controls.innerHTML = `
+      <button class="pagination-btn" id="gallery-prev" ${currentPage === 1 ? 'disabled' : ''}>
+        ← Previous
+      </button>
+      <span class="pagination-info">Page ${currentPage} of ${totalPages}</span>
+      <button class="pagination-btn" id="gallery-next" ${currentPage === totalPages ? 'disabled' : ''}>
+        Next →
+      </button>
+    `;
+
+    galleryViewEl.appendChild(controls);
+
+    // Add event listeners
+    const prevBtn = controls.querySelector('#gallery-prev');
+    const nextBtn = controls.querySelector('#gallery-next');
+
+    prevBtn?.addEventListener('click', () => {
+      if (currentPage > 1) {
+        currentPage--;
+        renderGalleryPage(currentPage);
+      }
+    });
+
+    nextBtn?.addEventListener('click', () => {
+      if (currentPage < totalPages) {
+        currentPage++;
+        renderGalleryPage(currentPage);
+      }
+    });
+  }
+
+  function getPagePhotos(page) {
+    const start = (page - 1) * GALLERY_PAGE_SIZE;
+    const end = start + GALLERY_PAGE_SIZE;
+    return ALL_PHOTOS.slice(start, end);
+  }
+
+  function renderGalleryPage(page) {
+    if (!galleryGridEl) return;
+
+    // Clear grid but keep pagination
+    galleryGridEl.innerHTML = '';
+    
+    const pagePhotos = getPagePhotos(page);
+    
+    pagePhotos.forEach((p) => {
       const item = document.createElement('div');
       item.className = 'gallery-item';
 
       const img = document.createElement('img');
-      img.src = p.src;
+      img.src = getCloudinaryUrl(p.publicId, { width: 400, height: 400 });
+      img.srcset = `
+        ${getCloudinaryUrl(p.publicId, { width: 400, height: 400 })} 400w,
+        ${getCloudinaryUrl(p.publicId, { width: 600, height: 600 })} 600w,
+        ${getCloudinaryUrl(p.publicId, { width: 800, height: 800 })} 800w
+      `;
+      img.sizes = "(max-width: 400px) 400px, (max-width: 600px) 600px, 800px";
       img.alt = p.alt || 'Memory photo';
       img.loading = 'lazy';
+      img.decoding = 'async';
 
       item.appendChild(img);
-      item.addEventListener('click', () => openLightbox(p.src));
+      item.addEventListener('click', () => openLightbox(p.publicId));
       galleryGridEl.appendChild(item);
     });
+
+    // Update pagination info
+    const info = document.querySelector('.pagination-info');
+    if (info) info.textContent = `Page ${currentPage} of ${totalPages}`;
+    
+    // Update button states
+    const prevBtn = document.getElementById('gallery-prev');
+    const nextBtn = document.getElementById('gallery-next');
+    if (prevBtn) prevBtn.disabled = currentPage === 1;
+    if (nextBtn) nextBtn.disabled = currentPage === totalPages;
+
+    // Scroll to top of gallery
+    galleryViewEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
   function showGalleryMode() {
     isGalleryMode = true;
+    currentPage = 1;
     stopAutoplay();
     carouselEl.style.display = 'none';
     galleryViewEl.removeAttribute('hidden');
-    buildGalleryGrid();
+    
+    // Remove old pagination if exists
+    const oldPagination = document.querySelector('.gallery-pagination');
+    if (oldPagination) oldPagination.remove();
+    
+    // Create pagination controls
+    createPaginationControls();
+    
+    // Render first page
+    renderGalleryPage(1);
+    
     toggleGalleryBtn.innerHTML = '<span class="btn-icon">🎠</span> Switch to Carousel Mode';
   }
 
@@ -601,6 +725,11 @@
     isGalleryMode = false;
     carouselEl.style.display = 'block';
     galleryViewEl.setAttribute('hidden', '');
+    
+    // Remove pagination
+    const pagination = document.querySelector('.gallery-pagination');
+    if (pagination) pagination.remove();
+    
     startAutoplay();
     toggleGalleryBtn.innerHTML = '<span class="btn-icon">🖼️</span> View All Photos (Gallery Mode)';
   }
