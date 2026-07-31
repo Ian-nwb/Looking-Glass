@@ -186,16 +186,181 @@
   const dotsWrap = document.getElementById('carousel-dots');
   const prevBtn = document.getElementById('prev-btn');
   const nextBtn = document.getElementById('next-btn');
+  const carouselWrapper = document.querySelector('.carousel-track-wrapper');
   let current = 0;
   let autoplayId = null;
   let slides = [];
+
+  /* ================= DRAG/SWIPE SUPPORT FOR MOBILE ================= */
+  let startX = 0;
+  let currentX = 0;
+  let isDragging = false;
+  let isSwiping = false;
+  const SWIPE_THRESHOLD = 50; // Minimum pixels to trigger a swipe
+
+  function initDragSupport() {
+    if (!carouselWrapper || !track) return;
+
+    // Touch events for mobile
+    carouselWrapper.addEventListener('touchstart', handleTouchStart, { passive: true });
+    carouselWrapper.addEventListener('touchmove', handleTouchMove, { passive: false });
+    carouselWrapper.addEventListener('touchend', handleTouchEnd, { passive: true });
+
+    // Mouse events for desktop drag (optional)
+    carouselWrapper.addEventListener('mousedown', handleMouseDown);
+    carouselWrapper.addEventListener('mousemove', handleMouseMove);
+    carouselWrapper.addEventListener('mouseup', handleMouseUp);
+    carouselWrapper.addEventListener('mouseleave', handleMouseUp);
+  }
+
+  function handleTouchStart(e) {
+    if (e.touches.length === 1) {
+      startX = e.touches[0].clientX;
+      isDragging = true;
+      isSwiping = false;
+      stopAutoplay();
+      // Reset transition for smooth drag
+      track.style.transition = 'none';
+    }
+  }
+
+  function handleTouchMove(e) {
+    if (!isDragging || e.touches.length !== 1) return;
+    e.preventDefault();
+    
+    currentX = e.touches[0].clientX;
+    const diff = currentX - startX;
+    
+    // Only consider it a swipe if movement is significant
+    if (Math.abs(diff) > 10) {
+      isSwiping = true;
+    }
+    
+    // Add visual feedback during drag
+    if (isSwiping) {
+      const trackWidth = track.offsetWidth;
+      const offset = -current * trackWidth + diff;
+      track.style.transform = `translateX(${offset}px)`;
+    }
+  }
+
+  function handleTouchEnd(e) {
+    if (!isDragging) return;
+    isDragging = false;
+    
+    if (isSwiping) {
+      const diff = currentX - startX;
+      
+      // Determine if swipe was significant enough
+      if (Math.abs(diff) > SWIPE_THRESHOLD) {
+        if (diff < 0) {
+          // Swipe left -> next slide
+          goTo(current + 1);
+        } else {
+          // Swipe right -> previous slide
+          goTo(current - 1);
+        }
+      } else {
+        // Not enough movement, snap back
+        goTo(current);
+      }
+      
+      // Reset transition for smooth animation
+      track.style.transition = 'transform 0.55s cubic-bezier(.3, .7, .2, 1)';
+      isSwiping = false;
+    }
+    
+    startAutoplay();
+  }
+
+  function handleMouseDown(e) {
+    startX = e.clientX;
+    isDragging = true;
+    isSwiping = false;
+    stopAutoplay();
+    track.style.transition = 'none';
+  }
+
+  function handleMouseMove(e) {
+    if (!isDragging) return;
+    currentX = e.clientX;
+    const diff = currentX - startX;
+    
+    if (Math.abs(diff) > 10) {
+      isSwiping = true;
+    }
+    
+    if (isSwiping) {
+      const trackWidth = track.offsetWidth;
+      const offset = -current * trackWidth + diff;
+      track.style.transform = `translateX(${offset}px)`;
+    }
+  }
+
+  function handleMouseUp(e) {
+    if (!isDragging) return;
+    isDragging = false;
+    
+    if (isSwiping) {
+      const diff = currentX - startX;
+      
+      if (Math.abs(diff) > SWIPE_THRESHOLD) {
+        if (diff < 0) {
+          goTo(current + 1);
+        } else {
+          goTo(current - 1);
+        }
+      } else {
+        goTo(current);
+      }
+      
+      track.style.transition = 'transform 0.55s cubic-bezier(.3, .7, .2, 1)';
+      isSwiping = false;
+    }
+    
+    startAutoplay();
+  }
+
+  /* ================= LIGHTBOX FUNCTIONS ================= */
+  const lightboxEl = document.getElementById('gallery-lightbox');
+  const lightboxImg = document.getElementById('lightbox-img');
+  const lightboxClose = document.getElementById('lightbox-close');
+
+  function openLightbox(src) {
+    if (!lightboxEl || !lightboxImg) return;
+    lightboxImg.src = src;
+    lightboxEl.classList.add('is-active');
+    lightboxEl.setAttribute('aria-hidden', 'false');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeLightbox() {
+    if (!lightboxEl) return;
+    lightboxEl.classList.remove('is-active');
+    lightboxEl.setAttribute('aria-hidden', 'true');
+    document.body.style.overflow = '';
+  }
+
+  // Keyboard support for lightbox
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && lightboxEl && lightboxEl.classList.contains('is-active')) {
+      closeLightbox();
+    }
+  });
+
+  if (lightboxClose) lightboxClose.addEventListener('click', closeLightbox);
+  if (lightboxEl) {
+    lightboxEl.addEventListener('click', (e) => {
+      if (e.target === lightboxEl) closeLightbox();
+    });
+  }
 
   function buildCarouselSlides() {
     if (!track) return;
     track.innerHTML = PHOTOS.map((p, i) => `
       <figure class="slide">
         <span class="peg" aria-hidden="true">📌</span>
-        <div class="polaroid">
+        <div class="polaroid" data-src="${p.src}">
           <div class="polaroid-img-wrap">
             <img src="${p.src}" alt="${p.alt || ''}" class="polaroid-img" loading="lazy" />
           </div>
@@ -204,30 +369,71 @@
       </figure>
     `).join('');
     slides = Array.from(track.children);
+    
+    // Add click listeners to polaroid images in carousel
+    slides.forEach((slide) => {
+      const polaroid = slide.querySelector('.polaroid');
+      if (polaroid) {
+        polaroid.addEventListener('click', function(e) {
+          // Don't trigger if swiping
+          if (isSwiping) return;
+          const src = this.getAttribute('data-src');
+          if (src) openLightbox(src);
+        });
+        // Add cursor pointer to indicate clickable
+        polaroid.style.cursor = 'pointer';
+      }
+    });
   }
 
+  /* ================= CAROUSEL DOTS - Show ONLY when 5 or fewer images ================= */
   function renderDots() {
     if (!dotsWrap) return;
     dotsWrap.innerHTML = '';
-    slides.forEach((_, i) => {
-      const dot = document.createElement('button');
-      dot.type = 'button';
-      dot.setAttribute('aria-label', `Go to photo ${i + 1}`);
-      if (i === current) dot.classList.add('active');
-      dot.addEventListener('click', () => { goTo(i); startAutoplay(); });
-      dotsWrap.appendChild(dot);
-    });
+    
+    const totalSlides = slides.length;
+    
+    // ONLY show dots if we have 5 or fewer slides
+    if (totalSlides <= 5) {
+      dotsWrap.style.display = 'flex';
+      
+      for (let i = 0; i < totalSlides; i++) {
+        const dot = document.createElement('button');
+        dot.type = 'button';
+        dot.setAttribute('aria-label', `Go to photo ${i + 1}`);
+        
+        if (i === 0) dot.classList.add('active');
+        
+        dot.addEventListener('click', () => {
+          goTo(i);
+          startAutoplay();
+        });
+        
+        dotsWrap.appendChild(dot);
+      }
+    } else {
+      dotsWrap.style.display = 'none';
+    }
+  }
+
+  function updateActiveDot() {
+    if (!dotsWrap) return;
+    const dots = dotsWrap.children;
+    const totalSlides = slides.length;
+    
+    if (totalSlides <= 5) {
+      Array.from(dots).forEach((dot, i) => {
+        dot.classList.toggle('active', i === current);
+      });
+    }
   }
 
   function goTo(index) {
     if (!slides.length) return;
     current = (index + slides.length) % slides.length;
+    track.style.transition = 'transform 0.55s cubic-bezier(.3, .7, .2, 1)';
     track.style.transform = `translateX(-${current * 100}%)`;
-    if (dotsWrap) {
-      Array.from(dotsWrap.children).forEach((dot, i) => {
-        dot.classList.toggle('active', i === current);
-      });
-    }
+    updateActiveDot();
   }
 
   function startAutoplay() {
@@ -244,8 +450,13 @@
     if (!slides.length) return;
     renderDots();
     goTo(0);
+    
+    // Initialize drag support for mobile
+    initDragSupport();
+    
     prevBtn && prevBtn.addEventListener('click', () => { goTo(current - 1); startAutoplay(); });
     nextBtn && nextBtn.addEventListener('click', () => { goTo(current + 1); startAutoplay(); });
+    
     const carouselEl = document.getElementById('carousel');
     if (carouselEl) {
       carouselEl.addEventListener('mouseenter', stopAutoplay);
@@ -308,8 +519,18 @@
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
       const message = messageInput.value.trim();
+      
+      // Check if message is empty
       if (!message) {
         statusEl.textContent = 'Write a little something first!';
+        statusEl.classList.add('is-error');
+        return;
+      }
+
+      // FIX: Character limit check - now matching HTML maxlength of 2000
+      const MAX_CHARS = 2000; // Changed from 596 to 2000 to match HTML
+      if (message.length > MAX_CHARS) {
+        statusEl.textContent = `Message is too long! Maximum ${MAX_CHARS} characters. You have ${message.length} characters.`;
         statusEl.classList.add('is-error');
         return;
       }
@@ -332,6 +553,7 @@
 
         form.reset();
         statusEl.textContent = 'Pinned! Thank you. 🐾';
+        statusEl.classList.remove('is-error');
       } catch (err) {
         statusEl.textContent = err.message || 'Something went wrong — try again.';
         statusEl.classList.add('is-error');
@@ -346,14 +568,11 @@
   const carouselEl = document.getElementById('carousel');
   const galleryViewEl = document.getElementById('gallery-view');
   const galleryGridEl = document.getElementById('gallery-grid');
-  const lightboxEl = document.getElementById('gallery-lightbox');
-  const lightboxImg = document.getElementById('lightbox-img');
-  const lightboxClose = document.getElementById('lightbox-close');
 
   let isGalleryMode = false;
 
   function buildGalleryGrid() {
-    if (!galleryGridEl || galleryGridEl.childElementCount) return; // build once
+    if (!galleryGridEl || galleryGridEl.childElementCount) return;
     PHOTOS.forEach((p) => {
       const item = document.createElement('div');
       item.className = 'gallery-item';
@@ -367,19 +586,6 @@
       item.addEventListener('click', () => openLightbox(p.src));
       galleryGridEl.appendChild(item);
     });
-  }
-
-  function openLightbox(src) {
-    if (!lightboxEl || !lightboxImg) return;
-    lightboxImg.src = src;
-    lightboxEl.classList.add('is-active');
-    lightboxEl.setAttribute('aria-hidden', 'false');
-  }
-
-  function closeLightbox() {
-    if (!lightboxEl) return;
-    lightboxEl.classList.remove('is-active');
-    lightboxEl.setAttribute('aria-hidden', 'true');
   }
 
   function showGalleryMode() {
@@ -402,13 +608,6 @@
   if (toggleGalleryBtn) {
     toggleGalleryBtn.addEventListener('click', () => {
       if (isGalleryMode) showCarouselMode(); else showGalleryMode();
-    });
-  }
-
-  if (lightboxClose) lightboxClose.addEventListener('click', closeLightbox);
-  if (lightboxEl) {
-    lightboxEl.addEventListener('click', (e) => {
-      if (e.target === lightboxEl) closeLightbox();
     });
   }
 

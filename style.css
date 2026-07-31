@@ -476,13 +476,26 @@ body {
 .carousel-dots {
   display: flex; justify-content: center; gap: 8px;
   margin-top: 24px;
+  padding: 5px 10px;
+  flex-wrap: wrap;
+  position: relative;
+  z-index: 5;
+  overflow: visible !important;
 }
 
 .carousel-dots button {
-  width: 10px; height: 10px; border-radius: 50%;
-  border: none; padding: 0; cursor: pointer;
-  background: var(--sky); opacity: 0.4;
+  width: 10px; 
+  height: 10px; 
+  border-radius: 50%;
+  border: none; 
+  padding: 0; 
+  cursor: pointer;
+  background: var(--sky); 
+  opacity: 0.4;
   transition: opacity 0.2s ease, transform 0.2s ease;
+  flex-shrink: 0;
+  min-width: 10px;
+  min-height: 10px;
 }
 
 .carousel-dots button.active { 
@@ -502,7 +515,7 @@ body {
   margin: 0 12px;
   border: 2px dashed rgba(168, 200, 236, 0.6);
   box-shadow: 0 12px 32px rgba(107, 155, 210, 0.12);
-  overflow: visible; /* FIX: Changed from overflow-x: hidden to visible */
+  overflow: visible;
 }
 
 .pinboard-section .section-title { 
@@ -576,14 +589,15 @@ body {
 }
 .form-status.is-error { color: #D9534F; }
 
+/* FIX: Made note cards wider and taller */
 .corkboard {
   max-width: 900px;
   margin: 0 auto;
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); /* Made wider */
   gap: 22px;
-  overflow: visible; /* FIX: Changed from overflow-x: hidden to visible */
-  padding: 10px 0; /* Add padding to prevent edge clipping */
+  overflow: visible;
+  padding: 10px 0;
 }
 
 @media (max-width: 380px) {
@@ -602,10 +616,11 @@ body {
   font-size: 1.3rem;
 }
 
+/* FIX: Made note cards taller with more padding */
 .note-card {
   background: var(--paper);
   border-radius: 6px;
-  padding: 18px 16px 14px;
+  padding: 24px 20px 18px; /* Increased padding */
   box-shadow: 0 10px 24px rgba(0,0,0,0.18);
   position: relative;
   transform: rotate(var(--tilt, -1deg));
@@ -613,10 +628,14 @@ body {
   border: 1px solid #F0E6D8;
   max-width: 100%;
   word-wrap: break-word;
-  overflow: visible !important; /* Prevent internal clipping */
-  min-height: 100px; /* Ensure minimum height */
+  overflow: visible !important;
+  min-height: 150px; /* Made taller */
   display: flex;
   flex-direction: column;
+  white-space: normal !important;
+  word-break: break-word !important;
+  overflow-wrap: break-word !important;
+  hyphens: auto;
 }
 
 .note-card::before {
@@ -626,17 +645,28 @@ body {
   left: 50%; 
   transform: translateX(-50%);
   font-size: 1.3rem;
-  z-index: 2; /* Ensure pin stays on top */
+  z-index: 2;
 }
 
+/* FIX: Updated note message with more space */
 .note-card .note-msg {
   font-size: 1.3rem;
-  line-height: 1.3;
-  margin: 6px 0 10px;
+  line-height: 1.6; /* More line spacing */
+  margin: 8px 0 12px;
   color: var(--midnight);
-  word-break: break-word;
-  overflow: visible; /* Prevent text clipping */
+  word-break: break-word !important;
+  overflow: visible !important;
   flex: 1;
+  white-space: normal !important;
+  overflow-wrap: break-word !important;
+  max-width: 100%;
+  display: block;
+  text-overflow: clip !important;
+  -webkit-line-clamp: unset !important;
+  -webkit-box-orient: unset !important;
+  /* Allow unlimited height */
+  max-height: none !important;
+  height: auto !important;
 }
 
 .note-card .note-name {
@@ -647,6 +677,10 @@ body {
   letter-spacing: 0.5px;
   color: var(--royal);
   margin: 0;
+  overflow: visible !important;
+  white-space: normal !important;
+  padding-top: 8px;
+  border-top: 1px solid rgba(168, 200, 236, 0.3);
 }
 
 .site-footer {
@@ -676,27 +710,39 @@ body {
   .letter-face { padding: 20px 14px; }
   .letter-title { font-size: 1.5rem; }
   
-  /* Mobile fixes for pinboard */
   .pinboard-section { 
     margin: 0; 
     border-radius: 0;
-    overflow: visible; /* Keep visible on mobile */
+    overflow: visible;
   }
   
   .corkboard {
-    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); /* Wider on mobile */
     gap: 20px;
     overflow: visible;
-    padding: 10px 5px; /* More padding on mobile */
+    padding: 10px 5px;
   }
   
   .note-card {
-    min-height: 80px;
-    padding: 16px 14px 12px;
+    min-height: 120px; /* Taller on mobile */
+    padding: 20px 16px 14px;
   }
   
   .note-card .note-msg {
     font-size: 1.1rem;
+    line-height: 1.5;
+  }
+
+  .carousel-dots {
+    gap: 6px;
+    padding: 5px 8px;
+  }
+
+  .carousel-dots button {
+    width: 8px;
+    height: 8px;
+    min-width: 8px;
+    min-height: 8px;
   }
 }
 
@@ -719,6 +765,21 @@ body {
     grid-template-columns: 1fr;
     gap: 16px;
     overflow: visible;
+  }
+  
+  .note-card {
+    min-height: 100px;
+  }
+
+  .carousel-dots {
+    gap: 4px;
+  }
+
+  .carousel-dots button {
+    width: 6px;
+    height: 6px;
+    min-width: 6px;
+    min-height: 6px;
   }
 }
 
