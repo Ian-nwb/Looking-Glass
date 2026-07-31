@@ -7,6 +7,12 @@
     folder: 'memories'
   };
 
+  /* ================= FALLBACK CONFIGURATION ================= */
+  const FALLBACK = {
+    enabled: true,
+    folder: 'assets' // Local assets folder
+  };
+
   /* ================= CLOUDINARY URL GENERATOR ================= */
   function getCloudinaryUrl(publicId, options = {}) {
     const {
@@ -41,19 +47,66 @@
     return url;
   }
 
+  /* ================= FALLBACK URL GENERATOR ================= */
+  function getFallbackUrl(publicId) {
+    // Remove any file extension if present, fallback assumes .jpg
+    const baseName = publicId.replace(/\.[^/.]+$/, '');
+    return `${FALLBACK.folder}/${baseName}.jpg`;
+  }
+
+  /* ================= IMAGE LOADER WITH FALLBACK ================= */
+  function createImageWithFallback(publicId, options = {}) {
+    const {
+      width = null,
+      height = null,
+      crop = 'fill',
+      quality = 'auto',
+      format = 'auto',
+      className = '',
+      alt = '',
+      loading = 'lazy',
+      decoding = 'async',
+      sizes = '',
+      srcset = ''
+    } = options;
+
+    // Generate Cloudinary URL
+    const cloudinaryUrl = getCloudinaryUrl(publicId, { width, height, crop, quality, format });
+    const fallbackUrl = getFallbackUrl(publicId);
+
+    // Create image element
+    const img = document.createElement('img');
+    img.src = cloudinaryUrl;
+    img.alt = alt || 'Memory photo';
+    img.loading = loading;
+    img.decoding = decoding;
+    img.className = className;
+
+    if (sizes) img.sizes = sizes;
+    if (srcset) img.srcset = srcset;
+
+    // Fallback: if Cloudinary fails, try local assets
+    img.onerror = function() {
+      console.warn(`⚠️ Cloudinary failed for ${publicId}, falling back to ${fallbackUrl}`);
+      this.src = fallbackUrl;
+      // Remove srcset since local file won't have responsive variants
+      this.srcset = '';
+      this.sizes = '';
+    };
+
+    return img;
+  }
+
   /* ================= PHOTOS — GENERATED WITH CLOUDINARY ================= */
   const TOTAL_PHOTOS = 600;
-  const GALLERY_PAGE_SIZE = 20; // Show 20 images per page in gallery mode
+  const GALLERY_PAGE_SIZE = 20;
   
-  // Generate all photos (but carousel only uses what it needs)
   const ALL_PHOTOS = Array.from({ length: TOTAL_PHOTOS }, (_, i) => ({
     publicId: `photo_${i + 1}`,
     alt: `Memory ${i + 1}`,
     caption: ''
   }));
 
-  /* ================= CAROUSEL PHOTOS — Only first 20 for performance ================= */
-  // Carousel only loads first 20 images (or adjust as needed)
   const CAROUSEL_PHOTOS = ALL_PHOTOS.slice(0, 20);
 
   const PAW_POSITIONS = ['top-left', 'bottom-right', 'top-right', 'bottom-left'];
@@ -200,7 +253,7 @@
     });
   }
 
-  /* ================= CAROUSEL (built from CAROUSEL_PHOTOS) ================= */
+  /* ================= CAROUSEL ================= */
   const track = document.getElementById('carousel-track');
   const dotsWrap = document.getElementById('carousel-dots');
   const prevBtn = document.getElementById('prev-btn');
@@ -210,7 +263,7 @@
   let autoplayId = null;
   let slides = [];
 
-  /* ================= DRAG/SWIPE SUPPORT FOR MOBILE ================= */
+  /* ================= DRAG/SWIPE SUPPORT ================= */
   let startX = 0;
   let currentX = 0;
   let isDragging = false;
@@ -350,6 +403,12 @@
     img.onload = () => {
       lightboxImg.src = highResUrl;
     };
+    img.onerror = function() {
+      // Fallback for lightbox
+      const fallbackUrl = getFallbackUrl(publicId);
+      console.warn(`⚠️ Cloudinary fallback for lightbox: ${fallbackUrl}`);
+      this.src = fallbackUrl;
+    };
     img.src = highResUrl;
     
     lightboxEl.classList.add('is-active');
@@ -382,12 +441,13 @@
     });
   }
 
-  /* ================= BUILD CAROUSEL WITH CLOUDINARY (USES CAROUSEL_PHOTOS) ================= */
+  /* ================= BUILD CAROUSEL WITH FALLBACK ================= */
   function buildCarouselSlides() {
     if (!track) return;
     
     track.innerHTML = CAROUSEL_PHOTOS.map((p, i) => {
-      const src = getCloudinaryUrl(p.publicId, { width: 800, height: 600 });
+      const cloudinarySrc = getCloudinaryUrl(p.publicId, { width: 800, height: 600 });
+      const fallbackSrc = getFallbackUrl(p.publicId);
       const srcSet = `
         ${getCloudinaryUrl(p.publicId, { width: 400, height: 300 })} 400w,
         ${getCloudinaryUrl(p.publicId, { width: 800, height: 600 })} 800w,
@@ -401,13 +461,14 @@
           <div class="polaroid" data-public-id="${p.publicId}">
             <div class="polaroid-img-wrap">
               <img 
-                src="${src}"
+                src="${cloudinarySrc}"
                 srcset="${srcSet}"
                 sizes="(max-width: 600px) 400px, (max-width: 1024px) 800px, 1200px"
                 alt="${p.alt || ''}" 
                 class="polaroid-img" 
                 loading="${i < 3 ? 'eager' : 'lazy'}"
                 decoding="async"
+                onerror="this.src='${fallbackSrc}'; this.srcset=''; this.sizes='';"
               />
             </div>
             <figcaption>${p.caption || ''}</figcaption>
@@ -604,7 +665,7 @@
     });
   }
 
-  /* ================= GALLERY MODE WITH PAGINATION ================= */
+  /* ================= GALLERY MODE WITH FALLBACK ================= */
   const toggleGalleryBtn = document.getElementById('toggle-gallery-btn');
   const carouselEl = document.getElementById('carousel');
   const galleryViewEl = document.getElementById('gallery-view');
@@ -614,7 +675,6 @@
   let currentPage = 1;
   const totalPages = Math.ceil(TOTAL_PHOTOS / GALLERY_PAGE_SIZE);
 
-  // Create pagination controls
   function createPaginationControls() {
     const existingControls = document.querySelector('.gallery-pagination');
     if (existingControls) existingControls.remove();
@@ -633,7 +693,6 @@
 
     galleryViewEl.appendChild(controls);
 
-    // Add event listeners
     const prevBtn = controls.querySelector('#gallery-prev');
     const nextBtn = controls.querySelector('#gallery-next');
 
@@ -661,7 +720,6 @@
   function renderGalleryPage(page) {
     if (!galleryGridEl) return;
 
-    // Clear grid but keep pagination
     galleryGridEl.innerHTML = '';
     
     const pagePhotos = getPagePhotos(page);
@@ -670,34 +728,43 @@
       const item = document.createElement('div');
       item.className = 'gallery-item';
 
-      const img = document.createElement('img');
-      img.src = getCloudinaryUrl(p.publicId, { width: 400, height: 400 });
-      img.srcset = `
+      const cloudinarySrc = getCloudinaryUrl(p.publicId, { width: 400, height: 400 });
+      const fallbackSrc = getFallbackUrl(p.publicId);
+      const srcset = `
         ${getCloudinaryUrl(p.publicId, { width: 400, height: 400 })} 400w,
         ${getCloudinaryUrl(p.publicId, { width: 600, height: 600 })} 600w,
         ${getCloudinaryUrl(p.publicId, { width: 800, height: 800 })} 800w
       `;
+
+      const img = document.createElement('img');
+      img.src = cloudinarySrc;
+      img.srcset = srcset;
       img.sizes = "(max-width: 400px) 400px, (max-width: 600px) 600px, 800px";
       img.alt = p.alt || 'Memory photo';
       img.loading = 'lazy';
       img.decoding = 'async';
+      
+      // Fallback on error
+      img.onerror = function() {
+        console.warn(`⚠️ Cloudinary fallback for gallery: ${fallbackSrc}`);
+        this.src = fallbackSrc;
+        this.srcset = '';
+        this.sizes = '';
+      };
 
       item.appendChild(img);
       item.addEventListener('click', () => openLightbox(p.publicId));
       galleryGridEl.appendChild(item);
     });
 
-    // Update pagination info
     const info = document.querySelector('.pagination-info');
     if (info) info.textContent = `Page ${currentPage} of ${totalPages}`;
     
-    // Update button states
     const prevBtn = document.getElementById('gallery-prev');
     const nextBtn = document.getElementById('gallery-next');
     if (prevBtn) prevBtn.disabled = currentPage === 1;
     if (nextBtn) nextBtn.disabled = currentPage === totalPages;
 
-    // Scroll to top of gallery
     galleryViewEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
@@ -708,14 +775,10 @@
     carouselEl.style.display = 'none';
     galleryViewEl.removeAttribute('hidden');
     
-    // Remove old pagination if exists
     const oldPagination = document.querySelector('.gallery-pagination');
     if (oldPagination) oldPagination.remove();
     
-    // Create pagination controls
     createPaginationControls();
-    
-    // Render first page
     renderGalleryPage(1);
     
     toggleGalleryBtn.innerHTML = '<span class="btn-icon">🎠</span> Switch to Carousel Mode';
@@ -726,7 +789,6 @@
     carouselEl.style.display = 'block';
     galleryViewEl.setAttribute('hidden', '');
     
-    // Remove pagination
     const pagination = document.querySelector('.gallery-pagination');
     if (pagination) pagination.remove();
     
