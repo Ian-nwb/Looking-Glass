@@ -519,8 +519,18 @@
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
       const message = messageInput.value.trim();
+      
+      // Check if message is empty
       if (!message) {
         statusEl.textContent = 'Write a little something first!';
+        statusEl.classList.add('is-error');
+        return;
+      }
+
+      // FIX: Character limit check - now matching HTML maxlength of 2000
+      const MAX_CHARS = 2000; // Changed from 596 to 2000 to match HTML
+      if (message.length > MAX_CHARS) {
+        statusEl.textContent = `Message is too long! Maximum ${MAX_CHARS} characters. You have ${message.length} characters.`;
         statusEl.classList.add('is-error');
         return;
       }
@@ -543,6 +553,7 @@
 
         form.reset();
         statusEl.textContent = 'Pinned! Thank you. 🐾';
+        statusEl.classList.remove('is-error');
       } catch (err) {
         statusEl.textContent = err.message || 'Something went wrong — try again.';
         statusEl.classList.add('is-error');
