@@ -698,7 +698,7 @@ body {
   }
   
   .corkboard {
-    grid-template-columns: repeat(auto-fill, minmax(480px, 1fr)); /* Changed from 160px to 220px */
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); /* Changed from 160px to 220px */
     gap: 20px;
     overflow: visible;
     padding: 10px 5px;
