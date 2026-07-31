@@ -186,9 +186,140 @@
   const dotsWrap = document.getElementById('carousel-dots');
   const prevBtn = document.getElementById('prev-btn');
   const nextBtn = document.getElementById('next-btn');
+  const carouselWrapper = document.querySelector('.carousel-track-wrapper');
   let current = 0;
   let autoplayId = null;
   let slides = [];
+
+  /* ================= DRAG/SWIPE SUPPORT FOR MOBILE ================= */
+  let startX = 0;
+  let currentX = 0;
+  let isDragging = false;
+  let isSwiping = false;
+  const SWIPE_THRESHOLD = 50; // Minimum pixels to trigger a swipe
+
+  function initDragSupport() {
+    if (!carouselWrapper || !track) return;
+
+    // Touch events for mobile
+    carouselWrapper.addEventListener('touchstart', handleTouchStart, { passive: true });
+    carouselWrapper.addEventListener('touchmove', handleTouchMove, { passive: false });
+    carouselWrapper.addEventListener('touchend', handleTouchEnd, { passive: true });
+
+    // Mouse events for desktop drag (optional)
+    carouselWrapper.addEventListener('mousedown', handleMouseDown);
+    carouselWrapper.addEventListener('mousemove', handleMouseMove);
+    carouselWrapper.addEventListener('mouseup', handleMouseUp);
+    carouselWrapper.addEventListener('mouseleave', handleMouseUp);
+  }
+
+  function handleTouchStart(e) {
+    if (e.touches.length === 1) {
+      startX = e.touches[0].clientX;
+      isDragging = true;
+      isSwiping = false;
+      stopAutoplay();
+      // Reset transition for smooth drag
+      track.style.transition = 'none';
+    }
+  }
+
+  function handleTouchMove(e) {
+    if (!isDragging || e.touches.length !== 1) return;
+    e.preventDefault();
+    
+    currentX = e.touches[0].clientX;
+    const diff = currentX - startX;
+    
+    // Only consider it a swipe if movement is significant
+    if (Math.abs(diff) > 10) {
+      isSwiping = true;
+    }
+    
+    // Add visual feedback during drag
+    if (isSwiping) {
+      const trackWidth = track.offsetWidth;
+      const offset = -current * trackWidth + diff;
+      track.style.transform = `translateX(${offset}px)`;
+    }
+  }
+
+  function handleTouchEnd(e) {
+    if (!isDragging) return;
+    isDragging = false;
+    
+    if (isSwiping) {
+      const diff = currentX - startX;
+      
+      // Determine if swipe was significant enough
+      if (Math.abs(diff) > SWIPE_THRESHOLD) {
+        if (diff < 0) {
+          // Swipe left -> next slide
+          goTo(current + 1);
+        } else {
+          // Swipe right -> previous slide
+          goTo(current - 1);
+        }
+      } else {
+        // Not enough movement, snap back
+        goTo(current);
+      }
+      
+      // Reset transition for smooth animation
+      track.style.transition = 'transform 0.55s cubic-bezier(.3, .7, .2, 1)';
+      isSwiping = false;
+    }
+    
+    startAutoplay();
+  }
+
+  function handleMouseDown(e) {
+    startX = e.clientX;
+    isDragging = true;
+    isSwiping = false;
+    stopAutoplay();
+    track.style.transition = 'none';
+  }
+
+  function handleMouseMove(e) {
+    if (!isDragging) return;
+    currentX = e.clientX;
+    const diff = currentX - startX;
+    
+    if (Math.abs(diff) > 10) {
+      isSwiping = true;
+    }
+    
+    if (isSwiping) {
+      const trackWidth = track.offsetWidth;
+      const offset = -current * trackWidth + diff;
+      track.style.transform = `translateX(${offset}px)`;
+    }
+  }
+
+  function handleMouseUp(e) {
+    if (!isDragging) return;
+    isDragging = false;
+    
+    if (isSwiping) {
+      const diff = currentX - startX;
+      
+      if (Math.abs(diff) > SWIPE_THRESHOLD) {
+        if (diff < 0) {
+          goTo(current + 1);
+        } else {
+          goTo(current - 1);
+        }
+      } else {
+        goTo(current);
+      }
+      
+      track.style.transition = 'transform 0.55s cubic-bezier(.3, .7, .2, 1)';
+      isSwiping = false;
+    }
+    
+    startAutoplay();
+  }
 
   /* ================= LIGHTBOX FUNCTIONS ================= */
   const lightboxEl = document.getElementById('gallery-lightbox');
@@ -200,14 +331,14 @@
     lightboxImg.src = src;
     lightboxEl.classList.add('is-active');
     lightboxEl.setAttribute('aria-hidden', 'false');
-    document.body.style.overflow = 'hidden'; // Prevent scrolling
+    document.body.style.overflow = 'hidden';
   }
 
   function closeLightbox() {
     if (!lightboxEl) return;
     lightboxEl.classList.remove('is-active');
     lightboxEl.setAttribute('aria-hidden', 'true');
-    document.body.style.overflow = ''; // Restore scrolling
+    document.body.style.overflow = '';
   }
 
   // Keyboard support for lightbox
@@ -243,7 +374,9 @@
     slides.forEach((slide) => {
       const polaroid = slide.querySelector('.polaroid');
       if (polaroid) {
-        polaroid.addEventListener('click', function() {
+        polaroid.addEventListener('click', function(e) {
+          // Don't trigger if swiping
+          if (isSwiping) return;
           const src = this.getAttribute('data-src');
           if (src) openLightbox(src);
         });
@@ -262,7 +395,7 @@
     
     // ONLY show dots if we have 5 or fewer slides
     if (totalSlides <= 5) {
-      dotsWrap.style.display = 'flex'; // Show dots
+      dotsWrap.style.display = 'flex';
       
       for (let i = 0; i < totalSlides; i++) {
         const dot = document.createElement('button');
@@ -279,7 +412,6 @@
         dotsWrap.appendChild(dot);
       }
     } else {
-      // Hide dots when more than 5 images
       dotsWrap.style.display = 'none';
     }
   }
@@ -289,7 +421,6 @@
     const dots = dotsWrap.children;
     const totalSlides = slides.length;
     
-    // Only update if dots are visible (5 or fewer slides)
     if (totalSlides <= 5) {
       Array.from(dots).forEach((dot, i) => {
         dot.classList.toggle('active', i === current);
@@ -300,6 +431,7 @@
   function goTo(index) {
     if (!slides.length) return;
     current = (index + slides.length) % slides.length;
+    track.style.transition = 'transform 0.55s cubic-bezier(.3, .7, .2, 1)';
     track.style.transform = `translateX(-${current * 100}%)`;
     updateActiveDot();
   }
@@ -318,8 +450,13 @@
     if (!slides.length) return;
     renderDots();
     goTo(0);
+    
+    // Initialize drag support for mobile
+    initDragSupport();
+    
     prevBtn && prevBtn.addEventListener('click', () => { goTo(current - 1); startAutoplay(); });
     nextBtn && nextBtn.addEventListener('click', () => { goTo(current + 1); startAutoplay(); });
+    
     const carouselEl = document.getElementById('carousel');
     if (carouselEl) {
       carouselEl.addEventListener('mouseenter', stopAutoplay);
@@ -405,7 +542,7 @@
         corkboard.insertAdjacentHTML('afterbegin', noteCardHtml(data.note, 0));
 
         form.reset();
-        statusEl.textContent = 'Pinned! Thank you.';
+        statusEl.textContent = 'Pinned! Thank you. 🐾';
       } catch (err) {
         statusEl.textContent = err.message || 'Something went wrong — try again.';
         statusEl.classList.add('is-error');
@@ -424,7 +561,7 @@
   let isGalleryMode = false;
 
   function buildGalleryGrid() {
-    if (!galleryGridEl || galleryGridEl.childElementCount) return; // build once
+    if (!galleryGridEl || galleryGridEl.childElementCount) return;
     PHOTOS.forEach((p) => {
       const item = document.createElement('div');
       item.className = 'gallery-item';
