@@ -190,12 +190,46 @@
   let autoplayId = null;
   let slides = [];
 
+  /* ================= LIGHTBOX FUNCTIONS ================= */
+  const lightboxEl = document.getElementById('gallery-lightbox');
+  const lightboxImg = document.getElementById('lightbox-img');
+  const lightboxClose = document.getElementById('lightbox-close');
+
+  function openLightbox(src) {
+    if (!lightboxEl || !lightboxImg) return;
+    lightboxImg.src = src;
+    lightboxEl.classList.add('is-active');
+    lightboxEl.setAttribute('aria-hidden', 'false');
+    document.body.style.overflow = 'hidden'; // Prevent scrolling
+  }
+
+  function closeLightbox() {
+    if (!lightboxEl) return;
+    lightboxEl.classList.remove('is-active');
+    lightboxEl.setAttribute('aria-hidden', 'true');
+    document.body.style.overflow = ''; // Restore scrolling
+  }
+
+  // Keyboard support for lightbox
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && lightboxEl && lightboxEl.classList.contains('is-active')) {
+      closeLightbox();
+    }
+  });
+
+  if (lightboxClose) lightboxClose.addEventListener('click', closeLightbox);
+  if (lightboxEl) {
+    lightboxEl.addEventListener('click', (e) => {
+      if (e.target === lightboxEl) closeLightbox();
+    });
+  }
+
   function buildCarouselSlides() {
     if (!track) return;
     track.innerHTML = PHOTOS.map((p, i) => `
       <figure class="slide">
         <span class="peg" aria-hidden="true">📌</span>
-        <div class="polaroid">
+        <div class="polaroid" data-src="${p.src}">
           <div class="polaroid-img-wrap">
             <img src="${p.src}" alt="${p.alt || ''}" class="polaroid-img" loading="lazy" />
           </div>
@@ -204,30 +238,70 @@
       </figure>
     `).join('');
     slides = Array.from(track.children);
+    
+    // Add click listeners to polaroid images in carousel
+    slides.forEach((slide) => {
+      const polaroid = slide.querySelector('.polaroid');
+      if (polaroid) {
+        polaroid.addEventListener('click', function() {
+          const src = this.getAttribute('data-src');
+          if (src) openLightbox(src);
+        });
+        // Add cursor pointer to indicate clickable
+        polaroid.style.cursor = 'pointer';
+      }
+    });
   }
 
+  /* ================= CAROUSEL DOTS - Show ONLY when 5 or fewer images ================= */
   function renderDots() {
     if (!dotsWrap) return;
     dotsWrap.innerHTML = '';
-    slides.forEach((_, i) => {
-      const dot = document.createElement('button');
-      dot.type = 'button';
-      dot.setAttribute('aria-label', `Go to photo ${i + 1}`);
-      if (i === current) dot.classList.add('active');
-      dot.addEventListener('click', () => { goTo(i); startAutoplay(); });
-      dotsWrap.appendChild(dot);
-    });
+    
+    const totalSlides = slides.length;
+    
+    // ONLY show dots if we have 5 or fewer slides
+    if (totalSlides <= 5) {
+      dotsWrap.style.display = 'flex'; // Show dots
+      
+      for (let i = 0; i < totalSlides; i++) {
+        const dot = document.createElement('button');
+        dot.type = 'button';
+        dot.setAttribute('aria-label', `Go to photo ${i + 1}`);
+        
+        if (i === 0) dot.classList.add('active');
+        
+        dot.addEventListener('click', () => {
+          goTo(i);
+          startAutoplay();
+        });
+        
+        dotsWrap.appendChild(dot);
+      }
+    } else {
+      // Hide dots when more than 5 images
+      dotsWrap.style.display = 'none';
+    }
+  }
+
+  function updateActiveDot() {
+    if (!dotsWrap) return;
+    const dots = dotsWrap.children;
+    const totalSlides = slides.length;
+    
+    // Only update if dots are visible (5 or fewer slides)
+    if (totalSlides <= 5) {
+      Array.from(dots).forEach((dot, i) => {
+        dot.classList.toggle('active', i === current);
+      });
+    }
   }
 
   function goTo(index) {
     if (!slides.length) return;
     current = (index + slides.length) % slides.length;
     track.style.transform = `translateX(-${current * 100}%)`;
-    if (dotsWrap) {
-      Array.from(dotsWrap.children).forEach((dot, i) => {
-        dot.classList.toggle('active', i === current);
-      });
-    }
+    updateActiveDot();
   }
 
   function startAutoplay() {
@@ -331,7 +405,7 @@
         corkboard.insertAdjacentHTML('afterbegin', noteCardHtml(data.note, 0));
 
         form.reset();
-        statusEl.textContent = 'Pinned! Thank you. 🐾';
+        statusEl.textContent = 'Pinned! Thank you.';
       } catch (err) {
         statusEl.textContent = err.message || 'Something went wrong — try again.';
         statusEl.classList.add('is-error');
@@ -346,9 +420,6 @@
   const carouselEl = document.getElementById('carousel');
   const galleryViewEl = document.getElementById('gallery-view');
   const galleryGridEl = document.getElementById('gallery-grid');
-  const lightboxEl = document.getElementById('gallery-lightbox');
-  const lightboxImg = document.getElementById('lightbox-img');
-  const lightboxClose = document.getElementById('lightbox-close');
 
   let isGalleryMode = false;
 
@@ -367,19 +438,6 @@
       item.addEventListener('click', () => openLightbox(p.src));
       galleryGridEl.appendChild(item);
     });
-  }
-
-  function openLightbox(src) {
-    if (!lightboxEl || !lightboxImg) return;
-    lightboxImg.src = src;
-    lightboxEl.classList.add('is-active');
-    lightboxEl.setAttribute('aria-hidden', 'false');
-  }
-
-  function closeLightbox() {
-    if (!lightboxEl) return;
-    lightboxEl.classList.remove('is-active');
-    lightboxEl.setAttribute('aria-hidden', 'true');
   }
 
   function showGalleryMode() {
@@ -402,13 +460,6 @@
   if (toggleGalleryBtn) {
     toggleGalleryBtn.addEventListener('click', () => {
       if (isGalleryMode) showCarouselMode(); else showGalleryMode();
-    });
-  }
-
-  if (lightboxClose) lightboxClose.addEventListener('click', closeLightbox);
-  if (lightboxEl) {
-    lightboxEl.addEventListener('click', (e) => {
-      if (e.target === lightboxEl) closeLightbox();
     });
   }
 
