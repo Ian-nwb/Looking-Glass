@@ -49,7 +49,6 @@
 
   /* ================= FALLBACK URL GENERATOR ================= */
   function getFallbackUrl(publicId) {
-    // Remove any file extension if present, fallback assumes .jpg
     const baseName = publicId.replace(/\.[^/.]+$/, '');
     return `${FALLBACK.folder}/${baseName}.jpg`;
   }
@@ -70,11 +69,9 @@
       srcset = ''
     } = options;
 
-    // Generate Cloudinary URL
     const cloudinaryUrl = getCloudinaryUrl(publicId, { width, height, crop, quality, format });
     const fallbackUrl = getFallbackUrl(publicId);
 
-    // Create image element
     const img = document.createElement('img');
     img.src = cloudinaryUrl;
     img.alt = alt || 'Memory photo';
@@ -85,11 +82,9 @@
     if (sizes) img.sizes = sizes;
     if (srcset) img.srcset = srcset;
 
-    // Fallback: if Cloudinary fails, try local assets
     img.onerror = function() {
       console.warn(`⚠️ Cloudinary failed for ${publicId}, falling back to ${fallbackUrl}`);
       this.src = fallbackUrl;
-      // Remove srcset since local file won't have responsive variants
       this.srcset = '';
       this.sizes = '';
     };
@@ -100,6 +95,7 @@
   /* ================= PHOTOS — GENERATED WITH CLOUDINARY ================= */
   const TOTAL_PHOTOS = 600;
   const GALLERY_PAGE_SIZE = 20;
+  const CAROUSEL_BATCH_SIZE = 20; // Number of photos to load at a time
   
   const ALL_PHOTOS = Array.from({ length: TOTAL_PHOTOS }, (_, i) => ({
     publicId: `photo_${i + 1}`,
@@ -107,7 +103,9 @@
     caption: ''
   }));
 
-  const CAROUSEL_PHOTOS = ALL_PHOTOS.slice(0, 20);
+  // Start with first batch
+  let loadedPhotos = ALL_PHOTOS.slice(0, CAROUSEL_BATCH_SIZE);
+  let currentIndex = 0;
 
   const PAW_POSITIONS = ['top-left', 'bottom-right', 'top-right', 'bottom-left'];
 
@@ -253,7 +251,7 @@
     });
   }
 
-  /* ================= CAROUSEL ================= */
+  /* ================= CAROUSEL WITH INFINITE SCROLLING ================= */
   const track = document.getElementById('carousel-track');
   const dotsWrap = document.getElementById('carousel-dots');
   const prevBtn = document.getElementById('prev-btn');
@@ -262,6 +260,7 @@
   let current = 0;
   let autoplayId = null;
   let slides = [];
+  let isLoading = false;
 
   /* ================= DRAG/SWIPE SUPPORT ================= */
   let startX = 0;
@@ -383,6 +382,99 @@
     startAutoplay();
   }
 
+  /* ================= LOAD MORE PHOTOS ================= */
+  function loadMorePhotos(direction) {
+    if (isLoading) return;
+    isLoading = true;
+
+    const currentCount = loadedPhotos.length;
+    
+    // If we've loaded all photos, stop
+    if (currentCount >= TOTAL_PHOTOS) {
+      isLoading = false;
+      return;
+    }
+
+    // Load next batch
+    const nextBatch = ALL_PHOTOS.slice(currentCount, currentCount + CAROUSEL_BATCH_SIZE);
+    
+    if (nextBatch.length === 0) {
+      isLoading = false;
+      return;
+    }
+
+    // Add to loaded photos
+    loadedPhotos = [...loadedPhotos, ...nextBatch];
+
+    // Rebuild carousel with new photos
+    rebuildCarousel();
+    isLoading = false;
+  }
+
+  /* ================= REBUILD CAROUSEL ================= */
+  function rebuildCarousel() {
+    if (!track) return;
+    
+    const currentSlide = current;
+    
+    track.innerHTML = loadedPhotos.map((p, i) => {
+      const cloudinarySrc = getCloudinaryUrl(p.publicId, { width: 800, height: 600 });
+      const fallbackSrc = getFallbackUrl(p.publicId);
+      const srcSet = `
+        ${getCloudinaryUrl(p.publicId, { width: 400, height: 300 })} 400w,
+        ${getCloudinaryUrl(p.publicId, { width: 800, height: 600 })} 800w,
+        ${getCloudinaryUrl(p.publicId, { width: 1200, height: 900 })} 1200w,
+        ${getCloudinaryUrl(p.publicId, { width: 1600, height: 1200 })} 1600w
+      `;
+      
+      return `
+        <figure class="slide">
+          <span class="peg" aria-hidden="true">📌</span>
+          <div class="polaroid" data-public-id="${p.publicId}">
+            <div class="polaroid-img-wrap">
+              <img 
+                src="${cloudinarySrc}"
+                srcset="${srcSet}"
+                sizes="(max-width: 600px) 400px, (max-width: 1024px) 800px, 1200px"
+                alt="${p.alt || ''}" 
+                class="polaroid-img" 
+                loading="${i < 3 ? 'eager' : 'lazy'}"
+                decoding="async"
+                onerror="this.src='${fallbackSrc}'; this.srcset=''; this.sizes='';"
+              />
+            </div>
+            <figcaption>${p.caption || ''}</figcaption>
+          </div>
+        </figure>
+      `;
+    }).join('');
+    
+    slides = Array.from(track.children);
+    
+    slides.forEach((slide) => {
+      const polaroid = slide.querySelector('.polaroid');
+      if (polaroid) {
+        polaroid.addEventListener('click', function(e) {
+          if (isSwiping) return;
+          const publicId = this.getAttribute('data-public-id');
+          if (publicId) openLightbox(publicId);
+        });
+        polaroid.style.cursor = 'pointer';
+      }
+    });
+
+    // Maintain current position
+    current = Math.min(currentSlide, slides.length - 1);
+    track.style.transition = 'none';
+    track.style.transform = `translateX(-${current * 100}%)`;
+    
+    // Force reflow
+    track.offsetHeight;
+    track.style.transition = 'transform 0.55s cubic-bezier(.3, .7, .2, 1)';
+    
+    updateActiveDot();
+  }
+
   /* ================= LIGHTBOX FUNCTIONS ================= */
   const lightboxEl = document.getElementById('gallery-lightbox');
   const lightboxImg = document.getElementById('lightbox-img');
@@ -404,7 +496,6 @@
       lightboxImg.src = highResUrl;
     };
     img.onerror = function() {
-      // Fallback for lightbox
       const fallbackUrl = getFallbackUrl(publicId);
       console.warn(`⚠️ Cloudinary fallback for lightbox: ${fallbackUrl}`);
       this.src = fallbackUrl;
@@ -441,11 +532,11 @@
     });
   }
 
-  /* ================= BUILD CAROUSEL WITH FALLBACK ================= */
+  /* ================= BUILD INITIAL CAROUSEL ================= */
   function buildCarouselSlides() {
     if (!track) return;
     
-    track.innerHTML = CAROUSEL_PHOTOS.map((p, i) => {
+    track.innerHTML = loadedPhotos.map((p, i) => {
       const cloudinarySrc = getCloudinaryUrl(p.publicId, { width: 800, height: 600 });
       const fallbackSrc = getFallbackUrl(p.publicId);
       const srcSet = `
@@ -499,6 +590,7 @@
     
     const totalSlides = slides.length;
     
+    // Hide dots when more than 5 images
     if (totalSlides <= 5) {
       dotsWrap.style.display = 'flex';
       
@@ -535,7 +627,15 @@
 
   function goTo(index) {
     if (!slides.length) return;
-    current = (index + slides.length) % slides.length;
+    
+    // Check if we're at the end and need to load more
+    if (index >= slides.length - 2 && loadedPhotos.length < TOTAL_PHOTOS) {
+      loadMorePhotos('next');
+    }
+    
+    // Clamp index
+    current = Math.max(0, Math.min(index, slides.length - 1));
+    
     track.style.transition = 'transform 0.55s cubic-bezier(.3, .7, .2, 1)';
     track.style.transform = `translateX(-${current * 100}%)`;
     updateActiveDot();
@@ -543,7 +643,13 @@
 
   function startAutoplay() {
     stopAutoplay();
-    autoplayId = setInterval(() => goTo(current + 1), 7500);
+    autoplayId = setInterval(() => {
+      // Check if we're near the end
+      if (current >= slides.length - 2 && loadedPhotos.length < TOTAL_PHOTOS) {
+        loadMorePhotos('next');
+      }
+      goTo(current + 1);
+    }, 7500);
   }
 
   function stopAutoplay() {
@@ -558,8 +664,17 @@
     
     initDragSupport();
     
-    prevBtn && prevBtn.addEventListener('click', () => { goTo(current - 1); startAutoplay(); });
-    nextBtn && nextBtn.addEventListener('click', () => { goTo(current + 1); startAutoplay(); });
+    prevBtn && prevBtn.addEventListener('click', () => { 
+      if (current > 0) {
+        goTo(current - 1); 
+        startAutoplay();
+      }
+    });
+    
+    nextBtn && nextBtn.addEventListener('click', () => { 
+      goTo(current + 1); 
+      startAutoplay();
+    });
     
     const carouselEl = document.getElementById('carousel');
     if (carouselEl) {
@@ -665,7 +780,7 @@
     });
   }
 
-  /* ================= GALLERY MODE WITH FALLBACK ================= */
+  /* ================= GALLERY MODE WITH PAGINATION ================= */
   const toggleGalleryBtn = document.getElementById('toggle-gallery-btn');
   const carouselEl = document.getElementById('carousel');
   const galleryViewEl = document.getElementById('gallery-view');
@@ -744,7 +859,6 @@
       img.loading = 'lazy';
       img.decoding = 'async';
       
-      // Fallback on error
       img.onerror = function() {
         console.warn(`⚠️ Cloudinary fallback for gallery: ${fallbackSrc}`);
         this.src = fallbackSrc;
